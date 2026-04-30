@@ -1,11 +1,11 @@
 # ======== STAGE 1: Сборка ========
-FROM amazoncorretto:21-alpine AS builder
+FROM amazoncorretto:25-alpine AS builder
 WORKDIR /application
 COPY target/*.jar app.jar
 RUN java -Djarmode=layertools -jar app.jar extract
 
 # ======== STAGE 2: Запуск ========
-FROM amazoncorretto:21-alpine
+FROM amazoncorretto:25-alpine
 
 # Установка curl для healthcheck
 RUN apk add --no-cache curl

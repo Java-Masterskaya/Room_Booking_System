@@ -50,7 +50,7 @@ services:
         condition: service_healthy
     volumes:
       - ./scripts/create-topics.sh:/create-topics.sh
-    entrypoint: [ "/bin/bash", "/create-topics.sh" ]
+    entrypoint: [ "/bin/sh", "/create-topics.sh" ]
 
   redis:
     image: redis:8-alpine

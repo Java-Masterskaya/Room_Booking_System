@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 echo 'Creating booking-room topics...'
 
 kafka-topics --create --if-not-exists \
