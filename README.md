@@ -36,7 +36,7 @@ docker-compose up -d
 ```
 или если вы хотите дождаться, пока все сервисы будут готовы, используйте:
 ```bash
-docker-compose up -d -wait
+docker-compose up -d --wait
 ```
 
 5. Проверка статуса приложения:
