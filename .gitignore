@@ -1,0 +1,9 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### Игнорируем файлы IDE ###
+.idea/
+*.iml
+
+### Игнорируем секреты ###
+.env
