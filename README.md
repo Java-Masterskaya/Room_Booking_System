@@ -5,7 +5,7 @@
 git clone https://github.com/Java-Masterskaya/Room_Booking_System.git
 cd Room_Booking_System
 ```
-2. Настройте переменные окружения в файле .env по примеру .env.example
+Настройте переменные окружения в файле .env по примеру .env.example
 ```bash
 cp .env.example .env
 ```
@@ -18,8 +18,26 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=ваш-безопасный-пароль
 KAFKA_CLUSTER_ID=уникальный-id-кластера
 ```
+2. Вариант "Local" (Разработка в IDE/ CLI)
+Используется, когда базы запущены в Docker, а код запускается локально в IDEA
 
-3. Запустите команду для сборки проекта:
+Шаг 1. Запуск БД, Redis, Kafka
+
+```bash
+docker-compose up -d booking-db redis kafka kafka-init-topics
+```
+
+Шаг 2. Запуск сервиса 
+
+- Из командной строки
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+- С помощью графического интерфейса IDE. 
+В Edit Configurations создайте конфигурацию Local, в поле VM Options введите -Dspring.profiles.active=local
+
+3. Вариант "Dev" запуск через Docker-compose:
 собираем jar файлы сервисов
 ```bash
 mvn clean package -DskipTests

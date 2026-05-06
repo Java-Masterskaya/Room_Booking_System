@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: booking-service
+  profiles:
+    active: local
   jpa:
     hibernate.ddl-auto: none
     properties:
@@ -12,10 +14,7 @@ spring:
         format_sql: true
     show-sql: true
   sql.init.mode: always
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bookingdb}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+
   flyway:
     enabled: true
     baseline-on-migrate: true
