@@ -1,6 +1,9 @@
-# Default ignored files
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### Игнорируем файлы IDE ###
 .idea/
 *.iml
 
-# Environment variables
+### Игнорируем секреты ###
 .env
