@@ -19,12 +19,12 @@ POSTGRES_PASSWORD=ваш-безопасный-пароль
 KAFKA_CLUSTER_ID=уникальный-id-кластера
 ```
 2. Вариант "Local" (Разработка в IDE/ CLI)
-Используется, когда базы запущены в Docker, а код запускается локально в IDEA
+Используется, когда Postgres, Redis, Kafka, Prometheus UI запущены в Docker, а код запускается локально в IDEA
 
-Шаг 1. Запуск БД, Redis, Kafka
+Шаг 1. Запуск БД, Redis, Kafka, Prometheus UI в Docker:
 
 ```bash
-docker-compose up -d booking-db redis kafka kafka-init-topics
+docker-compose up -d booking-db redis kafka kafka-init-topics prometheus
 ```
 
 Шаг 2. Запуск сервиса 
@@ -69,8 +69,13 @@ docker compose logs -f
 # Логи конкретного сервиса
 docker compose logs -f booking-service
 ```
+6. После запуска приложения сервисы будут доступны по следующим URL:
+- Booking Service: http://localhost:8080
+- Prometheus UI: http://localhost:9090
+- Health Check: http://localhost:8080/actuator/health
+- Metrics: http://localhost:8080/actuator/prometheus
 
-6. Для остановки приложения используйте команду:
+7. Для остановки приложения используйте команду:
 
 ```bash
 docker-compose down
