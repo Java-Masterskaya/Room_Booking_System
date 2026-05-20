@@ -1,5 +1,7 @@
 server:
   port: 8080
+  tomcat:
+    max-http-form-post-size: 2MB
 
 spring:
   application:
@@ -7,23 +9,36 @@ spring:
   profiles:
     active: local
   jpa:
-    hibernate.ddl-auto: none
+    hibernate:
+      ddl-auto: none
     properties:
       hibernate:
-        jdbc.time_zone: UTC
+        jdbc:
+          time_zone: UTC
         format_sql: true
-    show-sql: true
-  sql.init.mode: always
+        show-sql: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+  sql:
+    init:
+      mode: never
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
 app:
   openapi:
     spec-path: "booking-openapi.yaml"
-    cache-limit: "2MB"
+    max-body-size: "2MB"
 
-flyway:
-  enabled: true
-  baseline-on-migrate: true
-  locations: classpath:db/migration
+logging:
+  level:
+    com:
+      atlassian:
+        oai: DEBUG
 
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
@@ -52,3 +67,4 @@ management:
     metrics:
       export:
         enabled: true
+      show-details: always

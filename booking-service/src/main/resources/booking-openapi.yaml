@@ -16,7 +16,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Room'
-
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/v1/rooms/{roomId}/availability:
     get:
       summary: Получить расписание занятости комнаты на дату
@@ -42,6 +45,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TimeSlot'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/bookings:
     post:
@@ -55,10 +62,14 @@ paths:
       responses:
         '201':
           description: Бронирование успешно создано
-        '400':
-          description: Ошибка валидации (неверный формат данных)
         '409':
           description: Конфликт (комната уже занята на это время)
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLargeError'
 
     get:
       summary: Получить список бронирований текущего пользователя
@@ -71,6 +82,10 @@ paths:
       responses:
         '200':
           description: Успешный ответ
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/bookings/{bookingId}:
     delete:
@@ -86,6 +101,10 @@ paths:
           description: Бронирование успешно отменено
         '404':
           description: Бронирование не найдено
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
   schemas:
@@ -141,3 +160,50 @@ components:
           type: string
           format: date-time
           example: "2026-04-12T11:00:00Z"
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-04-12T10:00:00Z"
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "BAD_REQUEST"
+        message:
+          type: string
+          example: "Schema request validation failed"
+        details:
+          type: array
+          items:
+            type: string
+          example: [ "Field 'capacity' must be an integer" ]
+
+  responses:
+    BadRequestError:
+      description: Ошибка валидации запроса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    InternalServerError:
+      description: Нарушение контракта ответа бэкенда
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    PayloadTooLargeError:
+      description: Размер тела запроса превышает допустимый лимит
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
