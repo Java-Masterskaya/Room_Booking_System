@@ -52,8 +52,8 @@ public class AuthService {
     }
 
     public AuthResponse authenticate(AuthRequest request) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail()
-                , request.getPassword()));
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),
+                request.getPassword()));
 
         User user = (User) authentication.getPrincipal();
 
