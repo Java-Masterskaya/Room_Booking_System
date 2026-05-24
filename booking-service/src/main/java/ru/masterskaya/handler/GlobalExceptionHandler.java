@@ -17,40 +17,6 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(InvalidRequestException.class)
-    public ResponseEntity<ApiErrorResponse> handleOpenApiValidationError(InvalidRequestException exception) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-
-        List<String> errors = exception.getValidationReport().getMessages().stream()
-                .map(ValidationReport.Message::getMessage)
-                .collect(Collectors.toList());
-
-        ApiErrorResponse errorResponse = new ApiErrorResponse(
-                status.value(),
-                status.getReasonPhrase(),
-                "Schema request validation failed",
-                errors
-        );
-        return ResponseEntity.status(status).body(errorResponse);
-    }
-
-    @ExceptionHandler(InvalidResponseException.class)
-    public ResponseEntity<ApiErrorResponse> handleOpenApiValidationError(InvalidResponseException exception) {
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR; // 500, так как ошибся сервер
-
-        List<String> errors = exception.getValidationReport().getMessages().stream()
-                .map(ValidationReport.Message::getMessage)
-                .collect(Collectors.toList());
-
-        ApiErrorResponse errorResponse = new ApiErrorResponse(
-                status.value(),
-                status.getReasonPhrase(),
-                "Schema response validation failed",
-                errors
-        );
-        return ResponseEntity.status(status).body(errorResponse);
-    }
-
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
         HttpStatus status = HttpStatus.PAYLOAD_TOO_LARGE;
@@ -76,6 +42,4 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(status).body(errorResponse);
     }
-
-
 }
