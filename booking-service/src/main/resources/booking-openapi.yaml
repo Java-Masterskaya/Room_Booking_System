@@ -4,6 +4,54 @@ info:
   version: 1.0.0
   description: API для системы бронирования переговорных комнат
 paths:
+#  Ниже добавлены 2 эндпоинта /api/v1/roomsdemo и /api/v1/bookingsdemo исключительно для проверки валидации по OpenApi мпецификации и проверки маскирования секретных полей
+  /api/v1/roomsdemo:
+    get:
+      summary: Получить список всех переговорных
+      parameters:
+        - name: Authorization
+          in: header
+          required: true # Делаем заголовок обязательным
+          description: "Bearer токен авторизации"
+          schema:
+            type: string
+            # Задаем жесткое правило: токен должен быть строго от 50 до 100 символов
+            minLength: 50
+            maxLength: 100
+      responses:
+        '200':
+          description: Успешный ответ со списком комнат
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bookingsdemo:
+    post:
+      summary: Создать бронирование
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Бронирование успешно создано
+        '409':
+          description: Конфликт (комната уже занята на это время)
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLargeError'
   /api/v1/rooms:
     get:
       summary: Получить список всех переговорных

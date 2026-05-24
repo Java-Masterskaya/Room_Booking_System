@@ -1,4 +1,4 @@
-package ru.masterskaya.room.model;
+package ru.masterskaya.openApiDemoRoom.model;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Room {
+public class OpenApiDemoRoom {
     private Integer id;
     private String name;
     private Integer capacity;

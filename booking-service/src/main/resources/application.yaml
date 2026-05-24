@@ -33,6 +33,8 @@ app:
   openapi:
     spec-path: "booking-openapi.yaml"
     max-body-size: "2MB"
+  cors:
+    allowed-origin: ${APP_CORS_ALLOWED_ORIGIN:http://localhost:3000}
 
 logging:
   level:

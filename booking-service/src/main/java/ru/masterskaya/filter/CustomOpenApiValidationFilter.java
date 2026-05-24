@@ -14,7 +14,7 @@ public class CustomOpenApiValidationFilter extends OpenApiValidationFilter {
 
     private final long maxBodySizeInBytes;
 
-    public CustomOpenApiValidationFilter (String maxBodySize) {
+    public CustomOpenApiValidationFilter(String maxBodySize) {
         this.maxBodySizeInBytes = DataSize.parse(maxBodySize).toBytes();
     }
 

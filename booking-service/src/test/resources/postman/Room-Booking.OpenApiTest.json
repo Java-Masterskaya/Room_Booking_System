@@ -1,0 +1,167 @@
+{
+  "info": {
+    "_postman_id": "9cf7bc0e-efec-4d06-a296-2bc82620449a",
+    "name": "Room-Booking",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45190910",
+    "_collection_link": "https://go.postman.co/collection/45190910-9cf7bc0e-efec-4d06-a296-2bc82620449a?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "GetRooms",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 1. Проверяем, что сервер ответил успешно\r",
+              "pm.test(\"Статус код 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "// 2. Проверяем, что пришел массив (как в контракте)\r",
+              "pm.test(\"Ответ является массивом\", function () {\r",
+              "    var jsonData = pm.response.json();\r",
+              "    pm.expect(jsonData).to.be.an('array');\r",
+              "});\r",
+              "\r",
+              "// 3. Проверяем данные первой комнаты\r",
+              "pm.test(\"Данные комнаты Альфа корректны\", function () {\r",
+              "    var firstRoom = pm.response.json()[0];\r",
+              "    pm.expect(firstRoom.id).to.eql(1);\r",
+              "    pm.expect(firstRoom.name).to.eql(\"Альфа\");\r",
+              "    pm.expect(firstRoom.equipment).to.be.an('array').that.includes(\"Проектор\");\r",
+              "});\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer super-secret-postman-token-123",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "localhost:8080/api/v1/roomsdemo",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "roomsdemo"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PostBookingValid",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"roomId\": 1,\r\n  \"userId\": 42,\r\n  \"startTime\": \"2026-04-12T10:00:00Z\",\r\n  \"endTime\": \"2026-04-12T11:00:00Z\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/bookingsdemo",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "bookingsdemo"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PostBookingNotValid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": 42,\r\n  \"startTime\": \"вчера\",\r\n  \"endTime\": \"2026-04-12T11:00:00Z\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/bookingsdemo",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "bookingsdemo"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PostBookingClearBody",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/bookingsdemo",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "bookingsdemo"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

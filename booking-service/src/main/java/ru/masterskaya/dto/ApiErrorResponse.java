@@ -1,4 +1,4 @@
-package ru.masterskaya.error;
+package ru.masterskaya.dto;
 
 import lombok.Getter;
 
