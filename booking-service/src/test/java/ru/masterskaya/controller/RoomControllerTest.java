@@ -51,7 +51,7 @@ class RoomControllerTest {
         when(roomService.getRooms(null, null, 0, 10))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/rooms"))
+        mockMvc.perform(get("/api/v1/rooms"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.content[0].name").value("Room A"));
@@ -68,7 +68,7 @@ class RoomControllerTest {
 
         when(roomService.getRoomById(1L)).thenReturn(room);
 
-        mockMvc.perform(get("/rooms/1"))
+        mockMvc.perform(get("/api/v1/rooms/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Conference"));

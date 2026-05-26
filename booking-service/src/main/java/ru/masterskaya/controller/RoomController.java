@@ -7,7 +7,7 @@ import ru.masterskaya.model.Room;
 import ru.masterskaya.service.RoomService;
 
 @RestController
-@RequestMapping("/rooms")
+@RequestMapping("/api/v1/rooms")
 @RequiredArgsConstructor
 public class RoomController {
 
