@@ -17,8 +17,13 @@ class OpenApiTokenMaskingUnitTest {
         // 1. Инициализируем обработчик отчетов из конфигурации
         OpenApiValidationConfig.SafeValidationReportHandler handler = new OpenApiValidationConfig.SafeValidationReportHandler();
 
-        String secretToken = "my-super-secret-token-12345";
-        String rawValidationMessage = "String \"Bearer " + secretToken + "\" is too short (length: 37, required minimum: 50)";
+        String secretToken = "my-token-123";
+        String secretPassword = "123";
+        String secretKey = "999";
+
+        String rawValidationMessage = "Request header 'Authorization' with 'Bearer " + secretToken + "' is invalid. " +
+                "Field 'password' with value '" + secretPassword + "' and field 'secret' with value '" + secretKey + "' " +
+                "failed validation.";
 
         // 2. Создаем сообщение об ошибке
         ValidationReport.Message message = ValidationReport.Message.create(
@@ -38,6 +43,8 @@ class OpenApiTokenMaskingUnitTest {
         // 5. Проверяем, что внутри самого исключения данные ЗАМАСКИРОВАНЫ
         String exceptionMessage = thrownException.getMessage();
         assertThat(exceptionMessage).doesNotContain(secretToken);
+        assertThat(exceptionMessage).doesNotContain(secretPassword);
+        assertThat(exceptionMessage).doesNotContain(secretKey);
         assertThat(exceptionMessage).contains("*******");
 
         // 6. Считываем логи консоли, которые записал log.error() внутри хэндлера
@@ -45,7 +52,12 @@ class OpenApiTokenMaskingUnitTest {
 
         // Главные проверки безопасности логов сервера:
         assertThat(logOutput).contains("Validation failed");
+
         assertThat(logOutput).doesNotContain(secretToken);
+        assertThat(logOutput).doesNotContain(secretPassword);
+        assertThat(logOutput).doesNotContain(secretKey);
+
+        assertThat(logOutput).contains("Bearer *******");
         assertThat(logOutput).contains("*******");
     }
 }

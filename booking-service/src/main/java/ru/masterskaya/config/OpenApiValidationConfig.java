@@ -72,10 +72,27 @@ public class OpenApiValidationConfig implements WebMvcConfigurer {
 
                     // ШАГ 2: Защита JSON-полей в теле запроса (password, secret, token, cookie)
                     Matcher matcher = FIELD_PATTERN.matcher(maskedMessage);
-                    if (matcher.find()) {
 
+                    StringBuilder sb = new StringBuilder();
+
+                    while (matcher.find()) {
+                        String sensitiveValue = matcher.group(1);
+                        String fullMatch = matcher.group(0);
+
+                        String maskedMatch = fullMatch.replace(sensitiveValue, "*******");
+
+                        matcher.appendReplacement(sb, Matcher.quoteReplacement(maskedMatch));
+                    }
+
+                    matcher.appendTail(sb);
+
+                    maskedMessage = sb.toString();
+
+                    while (matcher.find()) {
                         String sensitiveValue = matcher.group(1);
                         maskedMessage = maskedMessage.replace(sensitiveValue, "*******");
+
+                        matcher.reset(maskedMessage);
                     }
 
                     // Логируем на сервере БЕЗОПАСНЫЙ текст

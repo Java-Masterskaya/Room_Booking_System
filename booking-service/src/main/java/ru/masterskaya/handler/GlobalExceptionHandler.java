@@ -1,8 +1,5 @@
 package ru.masterskaya.handler;
 
-import com.atlassian.oai.validator.report.ValidationReport;
-import com.atlassian.oai.validator.springmvc.InvalidRequestException;
-import com.atlassian.oai.validator.springmvc.InvalidResponseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,7 +9,6 @@ import ru.masterskaya.dto.ApiErrorResponse;
 import ru.masterskaya.exceptions.CustomInvalidRequestException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
