@@ -86,3 +86,83 @@ docker-compose down
 ```bash
 docker-compose down -v
 ```
+## Security: JWT Authentication & Authorization
+
+Реализован модуль безопасности, обеспечивающий:
+
+- **JWT-аутентификацию** - защита API с помощью JSON Web Tokens
+
+## Эндпоинты аутентификации
+
+### Регистрация пользователя:
+
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{
+    "email": "user@example.com",
+    "name": "Иван Иванов",
+    "password": "Password123"
+}
+
+Ответ (201 Created):
+
+json
+{
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "email": "user@example.com",
+    "role": "USER"
+}
+```
+
+### Авторизация:
+```http
+POST /api/v1/auth/authenticate
+Content-Type: application/json
+
+{
+    "email": "user@example.com",
+    "password": "Password123"
+}
+
+Ответ (200 OK):
+
+json
+{
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "email": "user@example.com",
+    "role": "USER"
+}
+```
+## Использование JWT токена
+Добавляйте токен в заголовок каждого защищенного запроса:
+
+```text
+Authorization: Bearer <your-jwt-token>
+```
+Для получения текущего аутентифицированного пользователя в любом сервисе:
+```java
+@Service
+public class ExampleService {
+
+    private final UserRepository userRepository;
+    
+    // Использовать этот метод в своем сервисе
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+    }
+    
+    // Использование в методах
+    public void exampleMethod() {
+        User currentUser = getCurrentUser();
+        Long userId = currentUser.getId();      // ID пользователя
+        String email = currentUser.getEmail();   // Email
+        Role role = currentUser.getRole();       // Роль (USER/ADMIN)
+    }
+}
+```
+**Важно:** не передавать userId в запросе
