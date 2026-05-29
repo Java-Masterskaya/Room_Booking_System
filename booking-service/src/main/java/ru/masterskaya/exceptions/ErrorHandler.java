@@ -45,9 +45,10 @@ public class ErrorHandler {
 
         return new ErrorResponse(errorMessage);
     }
+
     @ExceptionHandler(RoomNotFoundException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleRoomNotFoundException(RoomNotFoundException e){
+    public ErrorResponse handleRoomNotFoundException(RoomNotFoundException e) {
         log.error("RoomNotFoundException error: {}", e.getMessage());
         return new ErrorResponse(e.getMessage());
     }
