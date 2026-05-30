@@ -14,6 +14,5 @@ public class BookingServiceApp {
     public static void main(String[] args) {
         log.info("Starting Booking Service");
         SpringApplication.run(BookingServiceApp.class, args);
-        log.info("Booking Service started");
     }
 }

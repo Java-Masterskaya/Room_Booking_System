@@ -1,11 +1,14 @@
-Запуск приложения
+## Запуск приложения
 
 1. Склонируйте репозиторий и перейдите в папку проекта
+
 ```bash
 git clone https://github.com/Java-Masterskaya/Room_Booking_System.git
 cd Room_Booking_System
 ```
+
 Настройте переменные окружения в файле .env по примеру .env.example
+
 ```bash
 cp .env .env
 ```
@@ -18,8 +21,9 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=ваш-безопасный-пароль
 KAFKA_CLUSTER_ID=уникальный-id-кластера
 ```
+
 2. Вариант "Local" (Разработка в IDE/ CLI)
-Используется, когда Postgres, Redis, Kafka, Prometheus UI запущены в Docker, а код запускается локально в IDEA
+   Используется, когда Postgres, Redis, Kafka, Prometheus UI запущены в Docker, а код запускается локально в IDEA
 
 Шаг 1. Запуск БД, Redis, Kafka, Prometheus UI в Docker:
 
@@ -27,22 +31,26 @@ KAFKA_CLUSTER_ID=уникальный-id-кластера
 docker-compose up -d booking-db redis kafka kafka-init-topics prometheus
 ```
 
-Шаг 2. Запуск сервиса 
+Шаг 2. Запуск сервиса
 
 - Из командной строки
+
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-- С помощью графического интерфейса IDE. 
-В Edit Configurations создайте конфигурацию Local, в поле VM Options введите -Dspring.profiles.active=local
+- С помощью графического интерфейса IDE.
+  В Edit Configurations создайте конфигурацию Local, в поле VM Options введите -Dspring.profiles.active=local
 
 3. Вариант "Dev" запуск через Docker-compose:
-собираем jar файлы сервисов
+   собираем jar файлы сервисов
+
 ```bash
 mvn clean package -DskipTests
 ```
+
 собираем образы для всех сервисов
+
 ```bash
 docker-compose build
 ```
@@ -52,7 +60,9 @@ docker-compose build
 ```bash
 docker-compose up -d
 ```
+
 или если вы хотите дождаться, пока все сервисы будут готовы, используйте:
+
 ```bash
 docker-compose up -d --wait
 ```
@@ -69,7 +79,9 @@ docker compose logs -f
 # Логи конкретного сервиса
 docker compose logs -f booking-service
 ```
+
 6. После запуска приложения сервисы будут доступны по следующим URL:
+
 - Booking Service: http://localhost:8080
 - Prometheus UI: http://localhost:9090
 - Health Check: http://localhost:8080/actuator/health
@@ -80,12 +92,14 @@ docker compose logs -f booking-service
 ```bash
 docker-compose down
 ```
+
 Останавливает все контейнеры, но сохраняет данные в volumes. При следующем запуске все данные будут на месте.
 Для остановки и удаления контейнеров, сетей и томов используйте команду:
 
 ```bash
 docker-compose down -v
 ```
+
 ## Security: JWT Authentication & Authorization
 
 Реализован модуль безопасности, обеспечивающий:
@@ -117,6 +131,7 @@ json
 ```
 
 ### Авторизация:
+
 ```http
 POST /api/v1/auth/authenticate
 Content-Type: application/json
@@ -135,27 +150,32 @@ json
     "role": "USER"
 }
 ```
+
 ## Использование JWT токена
+
 Добавляйте токен в заголовок каждого защищенного запроса:
 
 ```text
 Authorization: Bearer <your-jwt-token>
 ```
+
 Для получения текущего аутентифицированного пользователя в любом сервисе:
+
 ```java
+
 @Service
 public class ExampleService {
 
     private final UserRepository userRepository;
-    
+
     // Использовать этот метод в своем сервисе
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         return userRepository.findByEmail(email)
-            .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
     }
-    
+
     // Использование в методах
     public void exampleMethod() {
         User currentUser = getCurrentUser();
@@ -165,8 +185,58 @@ public class ExampleService {
     }
 }
 ```
+
 **Важно:** не передавать userId в запросе
 
+## Локальный запуск CI pipline
+
+На текущий момент в CI pipeline включены следующие этапы:
+- Юнит-тесты (для PR при пуше в develop)
+- Юнит-тесты + сборка образов + запуск контейнеров + проверка здоровья
+  (для PR в main или Опционально при проставленном лейбле "run-integration" для PR)
+
+Убедитесь, что у вас установлен Make, для этого выполните команду:
+
+```bash
+make --version
+```
+
+Если Make не установлен, следуйте инструкциям для вашей операционной системы:
+
+- **Для Windows**: Установите [Chocolatey](https://chocolatey.org/install) и затем выполните `choco install make`.
+- **Для macOS**: Установите [Homebrew](https://brew.sh/) и затем выполните `brew install make`.
+- **Для Linux**: Используйте пакетный менеджер вашей дистрибуции, например, `sudo apt-get install make` для
+  Debian/Ubuntu.
+
+Для локального тестирования CI pipeline используйте команды:
+
+
+
+- Для запуска всех этапов CI (тесты, сборка образов, запуск контейнеров, проверка здоровья):
+
+```bash
+make ci
+```
+
+- Для запуска только юнит-тестов:
+
+```bash
+make unit-test
+```
+
+- Для запуска для ручной проверки сборки образов и запуска контейнеров:
+
+```bash
+make ci-up
+```
+
+- Остановка контейнеров и удаление ресурсов после проверки:
+
+```bash
+make ci-down
+```
 
 ## Документация и безопасность
-Подробное описание архитектуры безопасности, валидации OpenAPI-контрактов, лимитов трафика и механизмов маскирования конфиденциальных данных (защита логов от утечки токенов) находится в файле [SECURITY.md](./SECURITY.md).
+
+Подробное описание архитектуры безопасности, валидации OpenAPI-контрактов, лимитов трафика и механизмов маскирования
+конфиденциальных данных (защита логов от утечки токенов) находится в файле [SECURITY.md](./SECURITY.md).
