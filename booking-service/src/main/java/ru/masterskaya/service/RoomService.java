@@ -2,13 +2,21 @@ package ru.masterskaya.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ru.masterskaya.dto.PageResponse;
+import ru.masterskaya.dto.RoomFilteringRequest;
 import ru.masterskaya.exceptions.RoomNotFoundException;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.repository.RoomRepository;
+
+/**
+ * !!!ВАЖНО
+ * При добавлении методов UPDATE, DELETE, INSERT необходимо добавить аннотации @CacheEvict для очистки кэша "rooms",
+ * чтобы при изменении данных в БД кэш не возвращал устаревшую информацию
+ */
 
 @Service
 @RequiredArgsConstructor
@@ -17,26 +25,20 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
 
-    public Page<Room> getRooms(
-            Integer minCapacity,
-            String equipment,
-            int page,
-            int size
-    ) {
+    @Cacheable(value = "rooms")
+    public PageResponse<Room> getRooms(RoomFilteringRequest filteringRequest, Pageable pageable) {
 
         log.info(
                 "Выбор комнат с фильтрами: minCapacity={}, equipment={}, page={}, size={}",
-                minCapacity,
-                equipment,
-                page,
-                size
+                filteringRequest.minCapacity(),
+                filteringRequest.equipment(),
+                pageable.getPageNumber(),
+                pageable.getPageSize()
         );
 
-        Pageable pageable = PageRequest.of(page, size);
-
         Page<Room> rooms = roomRepository.search(
-                minCapacity,
-                equipment,
+                filteringRequest.minCapacity(),
+                filteringRequest.equipment(),
                 pageable
         );
 
@@ -44,9 +46,10 @@ public class RoomService {
                 rooms.getNumberOfElements(),
                 rooms.getTotalElements());
 
-        return rooms;
+        return PageResponse.from(rooms);
     }
 
+    @Cacheable(value = "rooms")
     public Room getRoomById(Long id) {
 
         log.info("Получение переговорной по id: {}", id);

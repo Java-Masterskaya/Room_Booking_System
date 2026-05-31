@@ -28,6 +28,13 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+  cache:
+    redis:
+      time-to-live: 10m
+      cache-null-values: false
+      key-prefix: "booking-service:v1"
+      enable-statistics: true
+    cache-names: rooms
 
 app:
   openapi:
