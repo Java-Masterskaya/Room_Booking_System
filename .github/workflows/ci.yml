@@ -52,13 +52,13 @@ jobs:
       - name: Build + package (all tests)
         run: mvn clean package
 
-      - name: Verify artifact
+      - name: Verify booking-service artifact
         run: |
-          if ! ls target/*.jar 1> /dev/null 2>&1; then
+          if ! ls booking-service/target/*.jar 1> /dev/null 2>&1; then
             echo "::error::JAR not found in target/"
             exit 1
           fi
-          ls -la target/*.jar
+          ls -la booking-service/target/*.jar
 
       - name: Start docker stack
         run: docker compose up -d --build --wait --timeout 300
