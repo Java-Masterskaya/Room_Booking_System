@@ -1,0 +1,93 @@
+name: CI Room Booking
+
+on:
+  pull_request:
+    branches: [ develop, main ]
+
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        type: choice
+        options: [ "false", "true" ]
+        default: "false"
+
+jobs:
+
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # =========================
+      # 1. Checkout
+      # =========================
+      - uses: actions/checkout@v4
+
+      # =========================
+      # 2. Java
+      # =========================
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: maven
+
+      - name: Create .env
+        run: cp .env.example .env
+
+      # =========================
+      # 3. Define mode
+      # =========================
+      - name: Set mode
+        id: mode
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "integration=${{ inputs.run_integration }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.base_ref }}" == "main" ]]; then
+            echo "integration=true" >> $GITHUB_OUTPUT
+          else
+            echo "integration=false" >> $GITHUB_OUTPUT
+          fi
+
+      # =========================
+      # 4. Unit tests (always)
+      # =========================
+      - name: Unit tests
+        run: mvn clean test
+
+      # =========================
+      # 5. Build (only if integration)
+      # =========================
+      - name: Build + package
+        if: steps.mode.outputs.integration == 'true'
+        run: mvn clean package
+
+      - name: Verify JAR
+        if: steps.mode.outputs.integration == 'true'
+        run: |
+          if ! ls booking-service/target/*.jar; then
+            echo "::error::JAR not found"
+            exit 1
+          fi
+
+      # =========================
+      # 6. Docker integration
+      # =========================
+      - name: Start docker stack
+        if: steps.mode.outputs.integration == 'true'
+        run: docker compose up -d --build --wait --timeout 300
+
+      - name: Health check
+        if: steps.mode.outputs.integration == 'true'
+        run: |
+          for i in $(seq 1 30); do
+            if curl -s --fail http://localhost:8080/actuator/health; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Tear down
+        if: always() && steps.mode.outputs.integration == 'true'
+        run: docker compose down -v
