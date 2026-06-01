@@ -46,6 +46,9 @@ jobs:
           java-version: 25
           cache: maven
 
+      - name: Create .env
+        run: cp .env.example .env
+
       - name: Build + package (all tests)
         run: mvn clean package
 
