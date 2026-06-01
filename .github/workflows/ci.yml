@@ -4,6 +4,18 @@ on:
   pull_request:
     branches: [ develop, main ]
 
+  # ручной запуск из GitHub UI
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        description: "Run integration tests (docker-compose)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
 jobs:
   # =========================
   # 1. UNIT TESTS
@@ -11,9 +23,10 @@ jobs:
 
   unit-tests:
     runs-on: ubuntu-latest
-    if: |
-      github.base_ref == 'develop' &&
-      !contains(github.event.pull_request.labels.*.name, 'run-integration')
+    if: >
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' &&
+       inputs.run_integration == 'false')
 
     steps:
       - name: Checkout
@@ -38,9 +51,10 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
-    if: |
+    if: >
       github.base_ref == 'main' ||
-      contains(github.event.pull_request.labels.*.name, 'run-integration')
+      (github.event_name == 'workflow_dispatch' &&
+       inputs.run_integration == 'true')
 
     steps:
       - uses: actions/checkout@v4
