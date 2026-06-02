@@ -2,29 +2,27 @@ name: CD Room Booking
 
 on:
   push:
-    branches:
-      - test-cd
+    branches: [develop, main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set environment
+      - name: Define image tag
         run: |
-          if [[ "${{ github.base_ref }}" == "main" ]]; then
-            echo "ENV=prod" >> $GITHUB_ENV
-          else
-            echo "ENV=dev" >> $GITHUB_ENV
-          fi
+          echo "REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "TAG=${GITHUB_REF_NAME}-${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "IMAGE=ghcr.io/$REPO" >> $GITHUB_ENV
 
-      - name: Set up JDK
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -33,35 +31,27 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Build with Maven Wrapper
+      - name: Build JAR
         run: ./mvnw clean package -DskipTests
 
-      - name: Log in to GHCR
+      - name: Login GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build image
         run: |
-          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
-          TAG=${GITHUB_REF_NAME}-${GITHUB_SHA}
-          
-          docker build \
-            -f booking-service/Dockerfile \
-            -t ghcr.io/$REPO:$TAG \
-            booking-service
+          docker build -t $IMAGE:$TAG .
+          docker tag $IMAGE:$TAG $IMAGE:latest
 
-      - name: Push Docker image
+      - name: Push image
         run: |
-          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
-          TAG=${GITHUB_REF_NAME}-${GITHUB_SHA}
-          
-          docker push ghcr.io/$REPO:$TAG
-          docker push ghcr.io/$REPO:latest
+          docker push $IMAGE:$TAG
+          docker push $IMAGE:latest
 
-      - name: Deploy to server
+      - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -69,5 +59,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /opt/room-booking
+
+            export TAG=${{ env.TAG }}
+
             docker compose pull
-            docker compose up -d
+            docker compose up -d --remove-orphans
