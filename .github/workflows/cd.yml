@@ -41,7 +41,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          IMAGE=ghcr.io/${{ github.repository }}:${{ github.sha }}
+          IMAGE=ghcr.io/${{ github.repository }}:${GITHUB_REF_NAME}-${{ github.sha }}
           docker build -t $IMAGE .
           docker tag $IMAGE ghcr.io/${{ github.repository }}:latest
 
