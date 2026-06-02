@@ -73,7 +73,11 @@ jobs:
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           TAG=${{ steps.vars.outputs.tag }}
 
-          docker build -t $IMAGE:$TAG .
+          docker build \
+            -f booking-service/Dockerfile \
+            -t $IMAGE:$TAG \
+            booking-service
+          
           docker tag $IMAGE:$TAG $IMAGE:latest
 
       # =========================
