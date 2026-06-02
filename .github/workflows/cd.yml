@@ -42,14 +42,19 @@ jobs:
 
       - name: Build Docker image
         run: |
-          IMAGE=ghcr.io/${{ github.repository }}:${{ github.sha }}
-          docker build -t $IMAGE .
-          docker tag $IMAGE ghcr.io/${{ github.repository }}:latest
+          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          TAG=${GITHUB_REF_NAME}-${GITHUB_SHA}
+          
+          docker build -t ghcr.io/$REPO:$TAG .
+          docker tag ghcr.io/$REPO:$TAG ghcr.io/$REPO:latest
 
       - name: Push Docker image
         run: |
-          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository }}:latest
+          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          TAG=${GITHUB_REF_NAME}-${GITHUB_SHA}
+          
+          docker push ghcr.io/$REPO:$TAG
+          docker push ghcr.io/$REPO:latest
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
