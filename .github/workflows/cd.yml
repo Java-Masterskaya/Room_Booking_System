@@ -2,56 +2,95 @@ name: CD Room Booking
 
 on:
   push:
-    branches: [develop, main, test-cd]
+    branches:
+      - develop
+      - main
+      - test-cd
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: java-masterskaya/room-booking-system
 
     steps:
-      - name: Checkout
+      # =========================
+      # 1. Checkout
+      # =========================
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Define image tag
+      # =========================
+      # 2. Define tag (NO bash state)
+      # =========================
+      - name: Compute image tag
+        id: vars
         run: |
-          echo "REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          echo "TAG=${GITHUB_REF_NAME}-${GITHUB_SHA}" >> $GITHUB_ENV
-          echo "IMAGE=ghcr.io/$REPO" >> $GITHUB_ENV
+          echo "tag=${GITHUB_REF_NAME}-${GITHUB_SHA}" >> $GITHUB_OUTPUT
 
+      # =========================
+      # 3. Setup Java
+      # =========================
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 25
 
+      # =========================
+      # 3. Setup Java
+      # =========================
       - name: Make mvnw executable
         run: chmod +x mvnw
 
+      # =========================
+      # 4. Build JAR
+      # =========================
       - name: Build JAR
         run: ./mvnw clean package -DskipTests
 
-      - name: Login GHCR
+      # =========================
+      # 6. Login GHCR
+      # =========================
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image
+      # =========================
+      # 7. Build Docker image
+      # =========================
+      - name: Build Docker image
         run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          TAG=${{ steps.vars.outputs.tag }}
+
           docker build -t $IMAGE:$TAG .
           docker tag $IMAGE:$TAG $IMAGE:latest
 
-      - name: Push image
+      # =========================
+      # 8. Push Docker image
+      # =========================
+      - name: Push Docker image
         run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          TAG=${{ steps.vars.outputs.tag }}
+
           docker push $IMAGE:$TAG
           docker push $IMAGE:latest
 
-      - name: Deploy
+      # =========================
+      # 9. Deploy to server
+      # =========================
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -60,7 +99,7 @@ jobs:
           script: |
             cd /opt/room-booking
 
-            export TAG=${{ env.TAG }}
+            export TAG=${{ steps.vars.outputs.tag }}
 
             docker compose pull
-            docker compose up -d --remove-orphans
+            docker compose up -d
