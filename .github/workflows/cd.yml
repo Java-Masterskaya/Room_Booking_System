@@ -108,14 +108,14 @@ jobs:
           strip_components: 1  # Убирает папку deploy, копирует файлы прямо в корень
           overwrite: true
 
-      - name: Copy Prometheus config to server
+      - name: Copy config to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "config/prometheus.yml"
-          target: "/opt/room-booking/config/"
+          source: "config"
+          target: "/opt/room-booking/"
           overwrite: true
 
       - name: Copy init scripts to server
@@ -124,8 +124,8 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "scripts/create-topics.sh"
-          target: "/opt/room-booking/scripts/"
+          source: "scripts"
+          target: "/opt/room-booking/"
           overwrite: true
 
       # =========================
