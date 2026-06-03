@@ -203,18 +203,19 @@ clean: down ## Полная очистка (удалить контейнеры 
 		echo "Cancelled"; \
 	fi
 
-cleanup-images: ## Удалить старые образы (оставляет последние KEEP_IMAGES для rollback)
-	@echo "$(YELLOW)Removing old app images (keeping last $(KEEP_IMAGES))...$(NC)"
+cleanup-images: ## Удалить старые образы (оставляет KEEP_IMAGES последних)
+	@echo "$(YELLOW)Removing old app images (keeping last $(KEEP_IMAGES) total)...$(NC)"
 	@docker images ghcr.io/java-masterskaya/room-booking-system \
-		--format "{{.CreatedAt}}\t{{.ID}}\t{{.Tag}}" \
-		| grep -v "latest" \
+		--format "{{.CreatedAt}}\t{{.Tag}}" \
 		| sort -r \
 		| tail -n +$$(($(KEEP_IMAGES)+1)) \
-		| awk '{print $$2}' \
-		| xargs -r docker rmi -f 2>/dev/null || true
-	@echo "$(YELLOW)Pruning dangling images...$(NC)"
+		| awk -F'\t' '{print $$2}' \
+		| while read tag; do \
+			echo "  Removing $$tag..."; \
+			docker rmi "ghcr.io/java-masterskaya/room-booking-system:$$tag" 2>/dev/null || true; \
+		done
 	@docker image prune -f
-	@echo "$(GREEN)[OK]$(NC) Cleanup done (kept last $(KEEP_IMAGES) images)"
+	@echo "$(GREEN)[OK]$(NC) Cleanup done (kept $(KEEP_IMAGES) images)"
 
 restart: down deploy ## Полный перезапуск всего
 
