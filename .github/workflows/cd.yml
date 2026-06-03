@@ -81,7 +81,39 @@ jobs:
           docker tag $IMAGE:$TAG $IMAGE:latest
 
       # =========================
-      # 8. Push Docker image
+      # 8. Prepare server directories and copy configs
+      # =========================
+
+      - name: Prepare server directories
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p /opt/room-booking/config
+            mkdir -p /opt/room-booking/scripts
+            
+      - name: Copy Prometheus config to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "config/prometheus.yml"
+          target: "/opt/room-booking/config/"
+
+      - name: Copy init scripts to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "scripts/create-topics.sh"
+          target: "/opt/room-booking/scripts/"
+
+      # =========================
+      # 9. Push Docker image
       # =========================
       - name: Push Docker image
         run: |
@@ -92,7 +124,7 @@ jobs:
           docker push $IMAGE:latest
 
       # =========================
-      # 9. Deploy to server
+      # 10. Deploy to server
       # =========================
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -105,5 +137,14 @@ jobs:
 
             export TAG=${{ steps.vars.outputs.tag }}
 
-            docker compose pull
+            # 1. INFRA (всегда безопасно)
+            docker compose -f infra-compose.yml up -d --wait
+      
+            # 2. INIT (idempotent jobs)
+            docker compose -f init-compose.yml up -d
+      
+            # 3. APP
             docker compose up -d
+      
+            # 4. cleanup (важно)
+            docker compose -f init-compose.yml rm -f || true
