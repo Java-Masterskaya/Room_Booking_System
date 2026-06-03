@@ -12,11 +12,6 @@ import ru.masterskaya.exceptions.RoomNotFoundException;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.repository.RoomRepository;
 
-/**
- * !!!ВАЖНО
- * При добавлении методов UPDATE, DELETE, INSERT необходимо добавить аннотации @CacheEvict для очистки кэша "rooms",
- * чтобы при изменении данных в БД кэш не возвращал устаревшую информацию
- */
 
 @Service
 @RequiredArgsConstructor
