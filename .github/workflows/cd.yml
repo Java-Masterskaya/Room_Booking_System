@@ -81,19 +81,19 @@ jobs:
           docker tag $IMAGE:$TAG $IMAGE:latest
 
       # =========================
-      # 8. Prepare server directories and copy configs
+      # 8. Copy deploy files to server
       # =========================
-
-      - name: Prepare server directories
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Copy deploy configs to server
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          script: |
-            mkdir -p /opt/room-booking/config
-            mkdir -p /opt/room-booking/scripts
-            
+          source: "deploy/*"
+          target: "/opt/room-booking/"
+          strip_components: 1  # Убирает папку deploy, копирует файлы прямо в корень
+          overwrite: true
+
       - name: Copy Prometheus config to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -101,7 +101,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "config/prometheus.yml"
-          target: "/opt/room-booking/"
+          target: "/opt/room-booking/config/"
+          overwrite: true
 
       - name: Copy init scripts to server
         uses: appleboy/scp-action@v0.1.7
@@ -110,7 +111,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "scripts/create-topics.sh"
-          target: "/opt/room-booking/"
+          target: "/opt/room-booking/scripts/"
+          overwrite: true
 
       # =========================
       # 9. Push Docker image
@@ -126,7 +128,7 @@ jobs:
       # =========================
       # 10. Deploy to server
       # =========================
-      - name: Deploy via SSH
+      - name: Deploy via Make
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -134,17 +136,4 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /opt/room-booking
-
-            export TAG=${{ steps.vars.outputs.tag }}
-
-            # 1. INFRA (всегда безопасно)
-            docker compose -f infra-compose.yml up -d --wait
-      
-            # 2. INIT (idempotent jobs)
-            docker compose -f init-compose.yml up -d
-      
-            # 3. APP
-            docker compose up -d
-      
-            # 4. cleanup (важно)
-            docker compose -f init-compose.yml rm -f || true
+            make deploy TAG=${{ steps.vars.outputs.tag }}

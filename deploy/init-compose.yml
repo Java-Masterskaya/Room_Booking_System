@@ -1,0 +1,21 @@
+services:
+
+  kafka-init-topics:
+    restart: "no"
+    image: confluentinc/confluent-local:7.7.8
+
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+    networks:
+      - room-booking-network
+
+    volumes:
+      - ./scripts/create-topics.sh:/create-topics.sh
+
+    entrypoint: [ "/bin/sh", "/create-topics.sh" ]
+
+networks:
+  room-booking-network:
+    external: true
