@@ -2,6 +2,7 @@
 
 # Конфигурация
 TAG ?= latest
+export TAG
 COMPOSE_APP = docker compose -f docker-compose.yml
 COMPOSE_INFRA = docker compose -f infra-compose.yml
 COMPOSE_INIT = docker compose -f init-compose.yml
@@ -133,7 +134,7 @@ init: check-kafka ## Запустить инициализацию (топики
 
 app: check-all ## Запустить приложение
 	@echo "$(YELLOW)Deploying app with TAG=$(TAG)...$(NC)"
-	TAG=$(TAG) $(COMPOSE_APP) up -d
+	$(COMPOSE_APP) up -d
 	@echo "Waiting for app to start..."
 	@sleep 5
 	@if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health | grep -q "200"; then \
