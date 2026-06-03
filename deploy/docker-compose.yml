@@ -1,6 +1,8 @@
 services:
   app:
     image: ghcr.io/java-masterskaya/room-booking-system:${TAG}
+    networks:
+      - room-booking-network
     ports:
       - "8080:8080"
     env_file:

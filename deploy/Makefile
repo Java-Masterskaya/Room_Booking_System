@@ -3,9 +3,9 @@
 # Конфигурация
 TAG ?= latest
 export TAG
-COMPOSE_APP = docker compose -f docker-compose.yml
-COMPOSE_INFRA = docker compose -f infra-compose.yml
-COMPOSE_INIT = docker compose -f init-compose.yml
+COMPOSE_INFRA = docker compose --project-name room-booking -f infra-compose.yml
+COMPOSE_APP = docker compose --project-name room-booking -f docker-compose.yml
+COMPOSE_INIT = docker compose --project-name room-booking -f init-compose.yml
 NETWORK_NAME = room-booking-network
 ENV_FILE = .env
 
@@ -136,7 +136,7 @@ app: check-all ## Запустить приложение
 	@echo "$(YELLOW)Deploying app with TAG=$(TAG)...$(NC)"
 	$(COMPOSE_APP) up -d
 	@echo "Waiting for app to start..."
-	@sleep 5
+	@sleep 15
 	@if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health | grep -q "200"; then \
 		echo "$(GREEN)[OK]$(NC) App is healthy"; \
 	else \
