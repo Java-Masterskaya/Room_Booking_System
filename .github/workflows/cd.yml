@@ -83,6 +83,20 @@ jobs:
       # =========================
       # 8. Copy deploy files to server
       # =========================
+      - name: Clean and prepare directories
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # Удалить старые папки полностью
+            rm -rf /opt/room-booking/config
+            rm -rf /opt/room-booking/scripts
+            # Создать чистые
+            mkdir -p /opt/room-booking/config
+            mkdir -p /opt/room-booking/scripts
+
       - name: Copy deploy configs to server
         uses: appleboy/scp-action@v0.1.7
         with:
