@@ -8,7 +8,7 @@ COMPOSE_APP = docker compose --project-name room-booking -f docker-compose.yml
 COMPOSE_INIT = docker compose --project-name room-booking -f init-compose.yml
 NETWORK_NAME = room-booking-network
 ENV_FILE = .env
-KEEP_IMAGES ?= 1  # Сколько образов хранить для rollback
+KEEP_IMAGES ?= 2  # Сколько образов хранить для rollback
 
 # Цвета для вывода
 GREEN = \033[0;32m
