@@ -1,4 +1,4 @@
-.PHONY: help check-env check-docker check-network infra init app deploy down restart clean logs status health rollback backup
+.PHONY: help check-env check-docker check-network infra init app deploy down restart clean logs status health rollback backup cleanup-images infra-down infra-restart app-down app-restart app-logs check-kafka check-postgres check-all shell-app shell-db shell-kafka shell-redis update-images prune restore-db backup-db
 
 # Конфигурация
 TAG ?= latest
@@ -8,6 +8,7 @@ COMPOSE_APP = docker compose --project-name room-booking -f docker-compose.yml
 COMPOSE_INIT = docker compose --project-name room-booking -f init-compose.yml
 NETWORK_NAME = room-booking-network
 ENV_FILE = .env
+KEEP_IMAGES ?= 1  # Сколько образов хранить для rollback
 
 # Цвета для вывода
 GREEN = \033[0;32m
@@ -158,11 +159,12 @@ app-logs: ## Посмотреть логи приложения
 # FULL DEPLOY
 # ============================================
 
-deploy: infra init app ## Полный деплой (инфраструктура + инициализация + приложение)
+deploy: infra init app ## Полный деплой (инфраструктура + инициализация + приложение+очистка старых образов)
 	@echo "$(GREEN)========================================$(NC)"
 	@echo "$(GREEN)✅ Deploy completed with TAG=$(TAG)$(NC)"
 	@echo "$(GREEN)========================================$(NC)"
 	@make status
+	@make cleanup-images
 
 # ============================================
 # ROLLBACK
@@ -201,6 +203,19 @@ clean: down ## Полная очистка (удалить контейнеры 
 		echo "Cancelled"; \
 	fi
 
+cleanup-images: ## Удалить старые образы (оставляет последние KEEP_IMAGES для rollback)
+	@echo "$(YELLOW)Removing old app images (keeping last $(KEEP_IMAGES))...$(NC)"
+	@docker images ghcr.io/java-masterskaya/room-booking-system \
+		--format "{{.CreatedAt}}\t{{.ID}}\t{{.Tag}}" \
+		| grep -v "latest" \
+		| sort -r \
+		| tail -n +$$(($(KEEP_IMAGES)+1)) \
+		| awk '{print $$2}' \
+		| xargs -r docker rmi -f 2>/dev/null || true
+	@echo "$(YELLOW)Pruning dangling images...$(NC)"
+	@docker image prune -f
+	@echo "$(GREEN)[OK]$(NC) Cleanup done (kept last $(KEEP_IMAGES) images)"
+
 restart: down deploy ## Полный перезапуск всего
 
 # ============================================
@@ -236,7 +251,7 @@ health: ## Проверить здоровье всех сервисов
 	@docker compose -f infra-compose.yml exec -T kafka kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1 && echo "  $(GREEN)OK$(NC)" || echo "  $(RED)Kafka is not responding$(NC)"
 	@echo ""
 	@echo "Redis:"
-	@docker compose -f infra-compose.yml exec -T booking-redis redis-cli ping 2>/dev/null || echo "  $(RED)Redis is not responding$(NC)"
+	@docker compose -f infra-compose.yml exec -T redis redis-cli ping 2>/dev/null || echo "  $(RED)Redis is not responding$(NC)"
 
 # ============================================
 # BACKUP
@@ -274,7 +289,7 @@ shell-kafka: ## Зайти в контейнер Kafka
 	$(COMPOSE_INFRA) exec kafka /bin/bash
 
 shell-redis: ## Зайти в контейнер Redis
-	$(COMPOSE_INFRA) exec booking-redis redis-cli
+	$(COMPOSE_INFRA) exec redis redis-cli
 
 update-images: ## Обновить все Docker образы
 	@echo "$(YELLOW)Pulling latest images...$(NC)"
