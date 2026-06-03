@@ -4,10 +4,6 @@ services:
     restart: "no"
     image: confluentinc/confluent-local:7.7.8
 
-    depends_on:
-      kafka:
-        condition: service_healthy
-
     networks:
       - room-booking-network
 
