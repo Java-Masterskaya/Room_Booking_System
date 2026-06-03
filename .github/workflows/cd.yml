@@ -101,7 +101,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "config/prometheus.yml"
-          target: "/opt/room-booking/config/"
+          target: "/opt/room-booking/"
 
       - name: Copy init scripts to server
         uses: appleboy/scp-action@v0.1.7
@@ -110,7 +110,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "scripts/create-topics.sh"
-          target: "/opt/room-booking/scripts/"
+          target: "/opt/room-booking/"
 
       # =========================
       # 9. Push Docker image
