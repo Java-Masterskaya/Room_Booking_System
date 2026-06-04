@@ -1,0 +1,155 @@
+name: CD Room Booking
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+      - main
+      - cd-server
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: java-masterskaya/room-booking-system
+
+    steps:
+      # =========================
+      # 1. Checkout
+      # =========================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # =========================
+      # 2. Define tag (NO bash state)
+      # =========================
+      - name: Compute image tag
+        id: vars
+        run: |
+          echo "tag=${GITHUB_REF_NAME}-${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+      # =========================
+      # 3. Setup Java
+      # =========================
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      # =========================
+      # 3. Setup Java
+      # =========================
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
+      # =========================
+      # 4. Build JAR
+      # =========================
+      - name: Build JAR
+        run: ./mvnw clean package -DskipTests
+
+      # =========================
+      # 6. Login GHCR
+      # =========================
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # =========================
+      # 7. Build Docker image
+      # =========================
+      - name: Build Docker image
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          TAG=${{ steps.vars.outputs.tag }}
+
+          docker build \
+            -f booking-service/Dockerfile \
+            -t $IMAGE:$TAG \
+            booking-service
+          
+          docker tag $IMAGE:$TAG $IMAGE:latest
+
+      # =========================
+      # 8. Copy deploy files to server
+      # =========================
+      - name: Clean and prepare directories
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # Удалить старые папки полностью
+            rm -rf /opt/room-booking/config
+            rm -rf /opt/room-booking/scripts
+            # Создать чистые
+            mkdir -p /opt/room-booking/config
+            mkdir -p /opt/room-booking/scripts
+
+      - name: Copy deploy configs to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "deploy/*"
+          target: "/opt/room-booking/"
+          strip_components: 1  # Убирает папку deploy, копирует файлы прямо в корень
+          overwrite: true
+
+      - name: Copy config to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "config"
+          target: "/opt/room-booking/"
+          overwrite: true
+
+      - name: Copy init scripts to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "scripts"
+          target: "/opt/room-booking/"
+          overwrite: true
+
+      # =========================
+      # 9. Push Docker image
+      # =========================
+      - name: Push Docker image
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          TAG=${{ steps.vars.outputs.tag }}
+
+          docker push $IMAGE:$TAG
+          docker push $IMAGE:latest
+
+      # =========================
+      # 10. Deploy to server
+      # =========================
+      - name: Deploy via Make
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /opt/room-booking
+            make deploy TAG=${{ steps.vars.outputs.tag }}

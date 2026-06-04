@@ -1,0 +1,24 @@
+services:
+  app:
+    image: ghcr.io/java-masterskaya/room-booking-system:${TAG}
+    networks:
+      - room-booking-network
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    restart: always
+    environment:
+      JAVA_OPTS: "-Xmx256m -Xms256m"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+networks:
+  room-booking-network:
+    external: true

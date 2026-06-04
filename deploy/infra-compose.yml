@@ -1,0 +1,159 @@
+services:
+
+  booking-db:
+    image: postgres:18-alpine
+    container_name: booking-db
+
+    restart: unless-stopped
+
+    ports:
+      - "5432:5432"
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      - booking-db-data:/var/lib/postgresql/
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -q -d $POSTGRES_DB -U $POSTGRES_USER" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - room-booking-network
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
+
+  kafka:
+    image: confluentinc/confluent-local:7.7.8
+    hostname: kafka
+    container_name: kafka
+
+    restart: unless-stopped
+
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+
+    environment:
+      KAFKA_NODE_ID: 1
+
+      KAFKA_ADVERTISED_LISTENERS: >
+        PLAINTEXT://kafka:29092,
+        PLAINTEXT_HOST://localhost:9092
+
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+
+      KAFKA_LISTENERS: >
+        PLAINTEXT://kafka:29092,
+        CONTROLLER://kafka:29093,
+        PLAINTEXT_HOST://0.0.0.0:9092
+
+      CLUSTER_ID: K0EA9p0yEe6MkAAAAkKsEg
+
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+    networks:
+      - room-booking-network
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 640M
+        reservations:
+          cpus: '0.4'
+          memory: 256M
+
+  redis:
+    image: redis:8-alpine
+    container_name: booking-redis
+
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - room-booking-network
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 64M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "--quiet", "http://localhost:9090/-/ready" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+    networks:
+      - room-booking-network
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 192M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+volumes:
+  booking-db-data:
+  kafka_data:
+  redis_data:
+
+networks:
+  room-booking-network:
+    external: true
