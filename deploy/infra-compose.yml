@@ -29,6 +29,15 @@ services:
     networks:
       - room-booking-network
 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
+
   kafka:
     image: confluentinc/confluent-local:7.7.8
     hostname: kafka
@@ -73,6 +82,15 @@ services:
     networks:
       - room-booking-network
 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 640M
+        reservations:
+          cpus: '0.4'
+          memory: 256M
+
   redis:
     image: redis:8-alpine
     container_name: booking-redis
@@ -94,6 +112,15 @@ services:
     networks:
       - room-booking-network
 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 64M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -112,6 +139,15 @@ services:
 
     networks:
       - room-booking-network
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 192M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
 volumes:
   booking-db-data:
