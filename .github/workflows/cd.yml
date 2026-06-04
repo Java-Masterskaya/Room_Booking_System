@@ -1,11 +1,12 @@
 name: CD Room Booking
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - develop
       - main
-      - test-cd
+      - cd-server
 
 permissions:
   contents: read
@@ -13,6 +14,7 @@ permissions:
 
 jobs:
   deploy:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     env:
