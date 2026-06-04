@@ -281,6 +281,8 @@ docker network create room-booking-network
 ├── infra-compose.yml       # Docker Compose для инфраструктуры
 ├── init-compose.yml        # Docker Compose для инициализации
 ├── Makefile                # Makefile для управления
+├── config/
+|   └── prometheus.yml      # Конфигурация Prometheus
 └── scripts/
     └── create-topics.sh    # Скрипт создания топиков Kafka
 ```
