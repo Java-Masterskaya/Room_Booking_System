@@ -53,6 +53,7 @@ jobs:
       # 4. Unit tests (always)
       # =========================
       - name: Unit tests
+        if: steps.mode.outputs.integration == 'false' #Выполняем этот только если не нужны интеграционные тесты
         run: mvn clean test
 
       # =========================
