@@ -6,7 +6,6 @@ on:
     branches:
       - develop
       - main
-      - cd-server
 
 permissions:
   contents: read
