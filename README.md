@@ -7,7 +7,7 @@ cd Room_Booking_System
 ```
 Настройте переменные окружения в файле .env по примеру .env.example
 ```bash
-cp .env .env
+cp .env.example .env.example
 ```
 
 Откройте `.env` в редакторе и замените плейсхолдеры на реальные значения:
