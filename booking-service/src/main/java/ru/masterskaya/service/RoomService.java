@@ -10,6 +10,8 @@ import ru.masterskaya.exceptions.RoomNotFoundException;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.repository.RoomRepository;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -19,15 +21,19 @@ public class RoomService {
 
     public Page<Room> getRooms(
             Integer minCapacity,
-            String equipment,
+            List<String> equipment,
             int page,
             int size
     ) {
 
+        List<String> normalizedEquipment = normalizeEquipment(equipment);
+        int equipmentSize = normalizedEquipment.size();
+        List<String> equipmentParam = equipmentSize == 0 ? List.of("") : normalizedEquipment;
+
         log.info(
                 "Выбор комнат с фильтрами: minCapacity={}, equipment={}, page={}, size={}",
                 minCapacity,
-                equipment,
+                normalizedEquipment,
                 page,
                 size
         );
@@ -36,7 +42,8 @@ public class RoomService {
 
         Page<Room> rooms = roomRepository.search(
                 minCapacity,
-                equipment,
+                equipmentParam,
+                equipmentSize,
                 pageable
         );
 
@@ -51,7 +58,7 @@ public class RoomService {
 
         log.info("Получение переговорной по id: {}", id);
 
-        Room room = roomRepository.findById(id)
+        Room room = roomRepository.findByIdWithEquipment(id)
                 .orElseThrow(() -> {
 
                     log.error("Переговорная с id {} не найдена", id);
@@ -62,5 +69,16 @@ public class RoomService {
         log.info("Переговорная найдена: {}, {}", room.getName(), room.getId());
 
         return room;
+    }
+
+    private List<String> normalizeEquipment(List<String> equipment) {
+        if (equipment == null || equipment.isEmpty()) {
+            return List.of();
+        }
+        return equipment.stream()
+                .filter(s -> s != null && !s.isBlank())
+                .map(s -> s.trim().toLowerCase())
+                .distinct()
+                .toList();
     }
 }

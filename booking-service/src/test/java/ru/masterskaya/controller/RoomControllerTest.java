@@ -8,12 +8,14 @@ import org.springframework.data.domain.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import ru.masterskaya.model.Equipment;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.security.JwtAuthenticationFilter;
 import ru.masterskaya.security.JwtService;
 import ru.masterskaya.service.RoomService;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -57,6 +59,32 @@ class RoomControllerTest {
                 .andExpect(jsonPath("$.content[0].name").value("Room A"));
 
         verify(roomService).getRooms(null, null, 0, 10);
+    }
+
+    @Test
+    void shouldFilterByEquipment() throws Exception {
+
+        Equipment projector = new Equipment(null, "projector", null);
+        Room room = new Room();
+        room.setId(1L);
+        room.setName("Room A");
+        room.setEquipment(Set.of(projector));
+
+        Page<Room> page = new PageImpl<>(
+                List.of(room),
+                PageRequest.of(0, 10),
+                1
+        );
+
+        when(roomService.getRooms(null, List.of("projector"), 0, 10))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/rooms").param("equipment", "projector"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].equipment[0]").value("projector"));
+
+        verify(roomService).getRooms(null, List.of("projector"), 0, 10);
     }
 
     @Test

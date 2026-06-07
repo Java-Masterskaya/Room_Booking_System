@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.service.RoomService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/rooms")
 @RequiredArgsConstructor
@@ -16,7 +18,7 @@ public class RoomController {
     @GetMapping
     public Page<Room> getRooms(
             @RequestParam(required = false) Integer minCapacity,
-            @RequestParam(required = false) String equipment,
+            @RequestParam(required = false) List<String> equipment,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {

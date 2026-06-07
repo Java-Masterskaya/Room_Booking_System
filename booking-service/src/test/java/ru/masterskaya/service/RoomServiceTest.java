@@ -36,17 +36,17 @@ class RoomServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Room> page = new PageImpl<>(List.of(room), pageable, 1);
 
-        when(roomRepository.search(10, "projector", pageable))
+        when(roomRepository.search(10, List.of("projector"), 1, pageable))
                 .thenReturn(page);
 
-        Page<Room> result = roomService.getRooms(10, "projector", 0, 10);
+        Page<Room> result = roomService.getRooms(10, List.of("projector"), 0, 10);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         assertEquals("Meeting Room", result.getContent().get(0).getName());
 
         verify(roomRepository, times(1))
-                .search(10, "projector", pageable);
+                .search(10, List.of("projector"), 1, pageable);
     }
 
     @Test
@@ -54,13 +54,13 @@ class RoomServiceTest {
         Pageable pageable = PageRequest.of(1, 5);
         Page<Room> emptyPage = new PageImpl<>(List.of(), pageable, 0);
 
-        when(roomRepository.search(null, null, pageable))
+        when(roomRepository.search(null, List.of(""), 0, pageable))
                 .thenReturn(emptyPage);
 
         Page<Room> result = roomService.getRooms(null, null, 1, 5);
 
         assertTrue(result.isEmpty());
-        verify(roomRepository).search(null, null, pageable);
+        verify(roomRepository).search(null, List.of(""), 0, pageable);
     }
 
     @Test
@@ -69,7 +69,7 @@ class RoomServiceTest {
         room.setId(1L);
         room.setName("Conference");
 
-        when(roomRepository.findById(1L))
+        when(roomRepository.findByIdWithEquipment(1L))
                 .thenReturn(Optional.of(room));
 
         Room result = roomService.getRoomById(1L);
@@ -78,12 +78,12 @@ class RoomServiceTest {
         assertEquals(1L, result.getId());
         assertEquals("Conference", result.getName());
 
-        verify(roomRepository).findById(1L);
+        verify(roomRepository).findByIdWithEquipment(1L);
     }
 
     @Test
     void shouldThrowExceptionWhenNotFound() {
-        when(roomRepository.findById(99L))
+        when(roomRepository.findByIdWithEquipment(99L))
                 .thenReturn(Optional.empty());
 
         RoomNotFoundException ex = assertThrows(
@@ -93,6 +93,6 @@ class RoomServiceTest {
 
         assertTrue(ex.getMessage().contains("99"));
 
-        verify(roomRepository).findById(99L);
+        verify(roomRepository).findByIdWithEquipment(99L);
     }
 }
