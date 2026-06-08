@@ -10,8 +10,6 @@ import ru.masterskaya.dto.RoomFilteringRequest;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.service.RoomService;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1/rooms")
 @RequiredArgsConstructor
