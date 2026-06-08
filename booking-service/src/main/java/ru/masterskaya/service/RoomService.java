@@ -2,10 +2,12 @@ package ru.masterskaya.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ru.masterskaya.dto.PageResponse;
+import ru.masterskaya.dto.RoomFilteringRequest;
 import ru.masterskaya.exceptions.RoomNotFoundException;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.repository.RoomRepository;
@@ -19,29 +21,23 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
 
-    public Page<Room> getRooms(
-            Integer minCapacity,
-            List<String> equipment,
-            int page,
-            int size
-    ) {
+    @Cacheable(value = "rooms")
+    public PageResponse<Room> getRooms(RoomFilteringRequest filteringRequest, Pageable pageable) {
 
-        List<String> normalizedEquipment = normalizeEquipment(equipment);
+        List<String> normalizedEquipment = normalizeEquipment(filteringRequest.equipment());
         int equipmentSize = normalizedEquipment.size();
         List<String> equipmentParam = equipmentSize == 0 ? List.of("") : normalizedEquipment;
 
         log.info(
                 "Выбор комнат с фильтрами: minCapacity={}, equipment={}, page={}, size={}",
-                minCapacity,
+                filteringRequest.minCapacity(),
                 normalizedEquipment,
-                page,
-                size
+                pageable.getPageNumber(),
+                pageable.getPageSize()
         );
 
-        Pageable pageable = PageRequest.of(page, size);
-
         Page<Room> rooms = roomRepository.search(
-                minCapacity,
+                filteringRequest.minCapacity(),
                 equipmentParam,
                 equipmentSize,
                 pageable
@@ -51,18 +47,17 @@ public class RoomService {
                 rooms.getNumberOfElements(),
                 rooms.getTotalElements());
 
-        return rooms;
+        return PageResponse.from(rooms);
     }
 
+    @Cacheable(value = "rooms")
     public Room getRoomById(Long id) {
 
         log.info("Получение переговорной по id: {}", id);
 
         Room room = roomRepository.findByIdWithEquipment(id)
                 .orElseThrow(() -> {
-
                     log.error("Переговорная с id {} не найдена", id);
-
                     return new RoomNotFoundException("Переговорная с id: " + id + " не найдена");
                 });
 

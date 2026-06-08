@@ -1,14 +1,16 @@
 package ru.masterskaya.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.*;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import ru.masterskaya.dto.PageResponse;
+import ru.masterskaya.dto.RoomFilteringRequest;
 import ru.masterskaya.exceptions.RoomNotFoundException;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.repository.RoomRepository;
@@ -16,6 +18,7 @@ import ru.masterskaya.repository.RoomRepository;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,11 +42,13 @@ class RoomServiceTest {
         when(roomRepository.search(10, List.of("projector"), 1, pageable))
                 .thenReturn(page);
 
-        Page<Room> result = roomService.getRooms(10, List.of("projector"), 0, 10);
+        PageResponse<Room> result = roomService.getRooms(
+                new RoomFilteringRequest(10, List.of("projector")),
+                PageRequest.of(0, 10));
 
         assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
-        assertEquals("Meeting Room", result.getContent().get(0).getName());
+        assertEquals(1, result.totalElements());
+        assertEquals("Meeting Room", result.content().getFirst().getName());
 
         verify(roomRepository, times(1))
                 .search(10, List.of("projector"), 1, pageable);
@@ -57,7 +62,9 @@ class RoomServiceTest {
         when(roomRepository.search(null, List.of(""), 0, pageable))
                 .thenReturn(emptyPage);
 
-        Page<Room> result = roomService.getRooms(null, null, 1, 5);
+        PageResponse<Room> result = roomService.getRooms(
+                new RoomFilteringRequest(null, null),
+                PageRequest.of(1, 5));
 
         assertTrue(result.isEmpty());
         verify(roomRepository).search(null, List.of(""), 0, pageable);

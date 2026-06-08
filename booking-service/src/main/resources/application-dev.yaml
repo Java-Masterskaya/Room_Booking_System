@@ -1,12 +1,12 @@
 spring:
   datasource:
-    url: jdbc:postgresql://booking-db:5432/${POSTGRES_DB:bookingdb}
+    url: jdbc:postgresql://${POSTGRES_HOST_DEV:booking-db}:${POSTGRES_PORT:5432}/${POSTGRES_DB:bookingdb}
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:postgres}
 
   data:
     redis:
-      host: booking-redis
-      port: 6379
+      host: ${REDIS_HOST_DEV:booking-redis}
+      port: ${REDIS_PORT:6379}
   kafka:
-    bootstrap-servers: kafka:29092
+    bootstrap-servers: ${KAFKA_HOST_DEV:kafka}:${KAFKA_PORT_DEV:29092}

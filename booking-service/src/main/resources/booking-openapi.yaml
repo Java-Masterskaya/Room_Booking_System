@@ -1,0 +1,350 @@
+openapi: 3.0.3
+info:
+  title: Room Booking API
+  version: 1.0.0
+  description: API для системы бронирования переговорных комнат
+
+paths:
+
+  /api/v1/roomsdemo:
+    get:
+      summary: Получить список всех переговорных
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          description: "Bearer токен авторизации"
+          schema:
+            type: string
+            minLength: 50
+            maxLength: 100
+      responses:
+        '200':
+          description: Успешный ответ со списком комнат
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bookingsdemo:
+    post:
+      summary: Создать бронирование
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Бронирование успешно создано
+        '409':
+          description: Конфликт (комната уже занята на это время)
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLargeError'
+
+  /api/v1/rooms:
+
+    get:
+      summary: Получить список переговорных с пагинацией и фильтрацией
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+
+        - name: minCapacity
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 5
+
+        - name: equipment
+          in: query
+          required: false
+          description: Список оборудования (можно передавать несколько значений)
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["Проектор", "Маркерная доска"]
+
+      responses:
+        '200':
+          description: Успешный ответ со страницей комнат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/rooms/{id}:
+    get:
+      summary: Получить переговорную по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Успешный ответ с комнатой
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '404':
+          description: Комната не найдена
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/rooms/{roomId}/availability:
+    get:
+      summary: Получить расписание занятости комнаты на дату
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: true
+          description: Дата в формате YYYY-MM-DD
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSlot'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bookings:
+    post:
+      summary: Создать бронирование
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Бронирование успешно создано
+        '409':
+          description: Конфликт (комната уже занята на это время)
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLargeError'
+
+    get:
+      summary: Получить список бронирований текущего пользователя
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bookings/{bookingId}:
+    delete:
+      summary: Отменить бронирование
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Бронирование успешно отменено
+        '404':
+          description: Бронирование не найдено
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+
+  schemas:
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Альфа"
+        capacity:
+          type: integer
+          example: 10
+        equipment:
+          type: array
+          description: Список названий оборудования (из Equipment.name)
+          items:
+            type: string
+          example: ["Проектор", "Маркерная доска"]
+
+    TimeSlot:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        isAvailable:
+          type: boolean
+
+    BookingRequest:
+      type: object
+      required:
+        - roomId
+        - userId
+        - startTime
+        - endTime
+      properties:
+        roomId:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 42
+        startTime:
+          type: string
+          format: date-time
+          example: "2026-04-12T10:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2026-04-12T11:00:00Z"
+
+    PageResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Room'
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          example: 100
+        totalPages:
+          type: integer
+          example: 10
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-04-12T10:00:00Z"
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "BAD_REQUEST"
+        message:
+          type: string
+          example: "Schema request validation failed"
+        details:
+          type: array
+          items:
+            type: string
+          example: ["Field 'capacity' must be an integer"]
+
+  responses:
+
+    BadRequestError:
+      description: Ошибка валидации запроса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+
+    InternalServerError:
+      description: Нарушение контракта ответа бэкенда
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+
+    PayloadTooLargeError:
+      description: Размер тела запроса превышает допустимый лимит
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'

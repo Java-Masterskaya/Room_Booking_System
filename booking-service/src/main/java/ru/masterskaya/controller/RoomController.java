@@ -1,8 +1,12 @@
 package ru.masterskaya.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
+import ru.masterskaya.annotation.LogAllMethods;
+import ru.masterskaya.dto.PageResponse;
+import ru.masterskaya.dto.RoomFilteringRequest;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.service.RoomService;
 
@@ -11,24 +15,16 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/rooms")
 @RequiredArgsConstructor
+@LogAllMethods
 public class RoomController {
 
     private final RoomService roomService;
 
     @GetMapping
-    public Page<Room> getRooms(
-            @RequestParam(required = false) Integer minCapacity,
-            @RequestParam(required = false) List<String> equipment,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-
-        return roomService.getRooms(
-                minCapacity,
-                equipment,
-                page,
-                size
-        );
+    public PageResponse<Room> getRooms(
+            @ModelAttribute RoomFilteringRequest filteringRequest,
+            @PageableDefault(size = 10, page = 0) Pageable pageable) {
+        return roomService.getRooms(filteringRequest, pageable);
     }
 
     @GetMapping("/{id}")
