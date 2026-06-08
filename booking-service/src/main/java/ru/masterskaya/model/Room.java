@@ -28,6 +28,12 @@ public class Room {
     @Column(name = "capacity")
     private int capacity;
 
+    public Room(String name, int capacity, List<String> equipment) {
+        this.name = name;
+        this.capacity = capacity;
+        this.equipment = equipment;
+    }
+
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "equipment", columnDefinition = "TEXT[]")
     private List<String> equipment;

@@ -35,6 +35,10 @@ app:
     max-body-size: "2MB"
   cors:
     allowed-origin: ${APP_CORS_ALLOWED_ORIGIN:http://localhost:3000}
+  redis:
+    lock:
+      wait-time-seconds: ${LOCK_WAIT_TIME_SECONDS:2}
+      lease-time-seconds: ${LOCK_LEASE_TIME_SECONDS:3}
 
 logging:
   level:
