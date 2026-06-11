@@ -36,6 +36,5 @@ public class Room {
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "equipment")
-//    @Column(name = "equipment", columnDefinition = "TEXT[]")
     private List<String> equipment;
 }

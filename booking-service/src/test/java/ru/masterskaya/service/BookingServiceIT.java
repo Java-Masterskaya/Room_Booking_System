@@ -36,9 +36,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("integration")
-@Import(BookingServiceIntegrationTest.TestKafkaConfig.class)
+@Import(BookingServiceIT.TestKafkaConfig.class)
 @Sql(scripts = "/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-public class BookingServiceIntegrationTest {
+public class BookingServiceIT {
 
     @TestConfiguration
     static class TestKafkaConfig {
