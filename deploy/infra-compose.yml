@@ -72,6 +72,8 @@ services:
 
     volumes:
       - kafka_data:/var/lib/kafka/data
+      - kafka_logs:/var/log/kafka
+      - kafka_secrets:/etc/kafka/secrets
 
     healthcheck:
       test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
@@ -130,6 +132,7 @@ services:
 
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
 
     healthcheck:
       test: [ "CMD", "wget", "--spider", "--quiet", "http://localhost:9090/-/ready" ]
@@ -152,7 +155,10 @@ services:
 volumes:
   booking-db-data:
   kafka_data:
+  kafka_logs:
+  kafka_secrets:
   redis_data:
+  prometheus_data:
 
 networks:
   room-booking-network:
