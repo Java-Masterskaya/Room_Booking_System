@@ -33,10 +33,10 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 384M
+          memory: 1024M
         reservations:
           cpus: '0.2'
-          memory: 128M
+          memory: 256M
 
   kafka:
     image: confluentinc/confluent-local:7.7.8
@@ -86,7 +86,7 @@ services:
       resources:
         limits:
           cpus: '0.8'
-          memory: 640M
+          memory: 1024M
         reservations:
           cpus: '0.4'
           memory: 256M
@@ -116,10 +116,10 @@ services:
       resources:
         limits:
           cpus: '0.2'
-          memory: 64M
+          memory: 128M
         reservations:
           cpus: '0.1'
-          memory: 32M
+          memory: 64M
 
   prometheus:
     image: prom/prometheus
@@ -144,10 +144,10 @@ services:
       resources:
         limits:
           cpus: '0.3'
-          memory: 192M
+          memory: 256M
         reservations:
           cpus: '0.1'
-          memory: 64M
+          memory: 128M
 
 volumes:
   booking-db-data:
