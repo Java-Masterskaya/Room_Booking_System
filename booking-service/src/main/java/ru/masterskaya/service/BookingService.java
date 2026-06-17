@@ -12,12 +12,12 @@ import ru.masterskaya.dto.BookingRequest;
 import ru.masterskaya.exceptions.BookingConflictException;
 import ru.masterskaya.model.Booking;
 import ru.masterskaya.model.OutboxEvent;
+import ru.masterskaya.model.OutboxStatus;
 import ru.masterskaya.repository.BookingRepository;
 import ru.masterskaya.repository.OutboxEventRepository;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -46,16 +46,21 @@ public class BookingService {
 
         try {
             if (lock.tryLock(lockWaitTime, lockLeaseTime, TimeUnit.SECONDS)) {
+
+                Booking savedBooking;
                 try {
                     log.debug("Замок Redis успешно захвачен для комнаты {}", bookingRequest.roomId());
-                    transactionTemplate.executeWithoutResult(status -> {
-                        processBookingSave(bookingRequest);
-                    });
+                    savedBooking = transactionTemplate.execute(status -> processBookingSave(bookingRequest));
+
                 } finally {
                     if (lock.isHeldByCurrentThread()) {
                         lock.unlock();
                         log.debug("Замок Redis успешно освобожден для комнаты {}.", bookingRequest.roomId());
                     }
+                }
+
+                if (savedBooking != null) {
+                    createAndSaveOutboxEvent(savedBooking);
                 }
             } else {
                 throw new BookingConflictException("Комната временно заблокирована из-за высокой нагрузки. Попробуйте позже.");
@@ -66,19 +71,13 @@ public class BookingService {
         }
     }
 
-    private void processBookingSave(BookingRequest bookingRequest) {
+    private Booking processBookingSave(BookingRequest bookingRequest) {
 
-        LocalDateTime startTimeUTC = bookingRequest.startTime()
-                .withOffsetSameInstant(ZoneOffset.UTC)
-                .toLocalDateTime();
-
-        LocalDateTime endTimeUTC = bookingRequest.endTime()
-                .withOffsetSameInstant(ZoneOffset.UTC)
-                .toLocalDateTime();
+        LocalDateTime startTimeLocal = bookingRequest.startTime().toLocalDateTime();
+        LocalDateTime endTimeLocal = bookingRequest.endTime().toLocalDateTime();
 
         boolean hasOverlap = bookingRepository.existsOverlapping(
-                Long.valueOf(bookingRequest.roomId()), startTimeUTC, endTimeUTC);
-
+                Long.valueOf(bookingRequest.roomId()), startTimeLocal, endTimeLocal);
         if (hasOverlap) {
             throw new BookingConflictException("Конфликт: Выбранное время уже занято другой бронью.");
         }
@@ -86,36 +85,36 @@ public class BookingService {
         Booking booking = new Booking(
                 Long.valueOf(bookingRequest.userId()),
                 Long.valueOf(bookingRequest.roomId()),
-                startTimeUTC,
-                endTimeUTC
+                startTimeLocal,
+                endTimeLocal
         );
 
         try {
-
-            Booking savedBooking = bookingRepository.saveAndFlush(booking);
-
-            Map<String, Object> payload = Map.of(
-                    "bookingId", savedBooking.getId(),
-                    "userId", savedBooking.getUserId(),
-                    "roomId", savedBooking.getRoomId(),
-                    "startTime", savedBooking.getStartTime().toString(),
-                    "endTime", savedBooking.getEndTime().toString()
-            );
-            String jsonPayload = objectMapper.writeValueAsString(payload);
-
-            OutboxEvent outboxEvent = new OutboxEvent(
-                    "BOOKING",
-                    savedBooking.getId().toString(),
-                    "BOOKING_CREATED",
-                    jsonPayload,
-                    "NEW"
-            );
-            outboxEventRepository.save(outboxEvent);
+            return bookingRepository.saveAndFlush(booking);
         } catch (DataIntegrityViolationException exception) {
             log.warn("Сработала защита на уровне EXCLUDE индекса PostgreSQL для комнаты {}", bookingRequest.roomId());
             throw new BookingConflictException("Конфликт: выбранное время для этой комнаты уже занято.");
         }
+    }
 
+    private void createAndSaveOutboxEvent(Booking savedBooking) {
+        Map<String, Object> payload = Map.of(
+                "bookingId", savedBooking.getId(),
+                "userId", savedBooking.getUserId(),
+                "roomId", savedBooking.getRoomId(),
+                "startTime", savedBooking.getStartTime().toString(),
+                "endTime", savedBooking.getEndTime().toString()
+        );
+        String jsonPayload = objectMapper.writeValueAsString(payload);
+
+        OutboxEvent outboxEvent = new OutboxEvent(
+                OutboxEvent.AGGREGATE_TYPE_BOOKING,
+                savedBooking.getId().toString(),
+                OutboxEvent.EVENT_BOOKING_CREATED,
+                jsonPayload,
+                OutboxStatus.NEW
+        );
+        outboxEventRepository.save(outboxEvent);
     }
 }
 

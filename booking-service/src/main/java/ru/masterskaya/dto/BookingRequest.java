@@ -1,5 +1,7 @@
 package ru.masterskaya.dto;
 
+import jakarta.validation.constraints.AssertTrue;
+
 import java.time.OffsetDateTime;
 
 public record BookingRequest(
@@ -8,7 +10,8 @@ public record BookingRequest(
         OffsetDateTime startTime,
         OffsetDateTime endTime
 ) {
-    public boolean isPeriodInvalid() {
-        return !startTime.isBefore(endTime);
+    @AssertTrue(message = "Ошибка валидации: время окончания должно быть строго позже времени начала")
+    public boolean isPeriodValid() {
+        return startTime.isBefore(endTime);
     }
 }

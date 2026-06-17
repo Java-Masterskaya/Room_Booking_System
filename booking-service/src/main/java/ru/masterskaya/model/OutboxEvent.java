@@ -16,6 +16,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class OutboxEvent {
 
+    public static final String AGGREGATE_TYPE_BOOKING = "BOOKING";
+    public static final String EVENT_BOOKING_CREATED = "BOOKING_CREATED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,12 +37,13 @@ public class OutboxEvent {
     private String payLoad;
 
     @Column(name = "status", nullable = false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private OutboxStatus status;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    public OutboxEvent(String aggregateType, String aggregateId, String eventType, String payLoad, String status) {
+    public OutboxEvent(String aggregateType, String aggregateId, String eventType, String payLoad, OutboxStatus status) {
         this.aggregateType = aggregateType;
         this.aggregateId = aggregateId;
         this.eventType = eventType;

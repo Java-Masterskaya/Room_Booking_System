@@ -81,11 +81,20 @@ public class BookingServiceIT {
             throw new IllegalStateException("Запуск тест только под профилем integration");
         }
 
-        User user = new User("user@email.com", "userName", "userPassword", Role.USER);
+        User user = User.builder()
+                .email("user@email.com")
+                .name("userName")
+                .password("userPassword")
+                .role(Role.USER)
+                .build();
         User savedUser = userRepository.save(user);
         testUserId = savedUser.getId();
 
-        Room room = new Room("room", 2, List.of("СТУЛ"));
+        Room room = Room.builder()
+                .name("room")
+                .capacity(2)
+                .equipment(List.of("СТУЛ"))
+                .build();
         Room savedRoom = roomRepository.save(room);
         testRoomId = savedRoom.getId();
     }

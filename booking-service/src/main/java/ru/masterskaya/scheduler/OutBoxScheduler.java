@@ -5,13 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.masterskaya.model.OutboxEvent;
+import ru.masterskaya.model.OutboxStatus;
 import ru.masterskaya.repository.OutboxEventRepository;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -36,6 +40,7 @@ public class OutBoxScheduler {
         }
 
         sendEventsToKafka(events);
+
         transactionTemplate.executeWithoutResult(status -> updateFinalStatuses(events));
 
     }
@@ -47,21 +52,27 @@ public class OutBoxScheduler {
             return events;
         }
         for (OutboxEvent event : events) {
-            event.setStatus("PROCESSING");
+            event.setStatus(OutboxStatus.PROCESSING);
         }
 
         return events;
     }
 
     private void sendEventsToKafka(List<OutboxEvent> events) {
+        List<CompletableFuture<SendResult<String, String>>> futures = new ArrayList<>();
+
         for (OutboxEvent event : events) {
+            futures.add(kafkaTemplate.send(TOPIC, event.getAggregateId(), event.getPayLoad()));
+        }
+
+        for (int i = 0; i < futures.size(); i++) {
+            OutboxEvent event = events.get(i);
             try {
-                kafkaTemplate.send(TOPIC, event.getAggregateId(), event.getPayLoad())
-                        .get(5, TimeUnit.SECONDS);
-                event.setStatus("PROCESSED");
+                futures.get(i).get(5, TimeUnit.SECONDS);
+                event.setStatus(OutboxStatus.PROCESSED);
             } catch (Exception exception) {
                 log.error("Критический сбой при обработке события {}: {}", event.getId(), exception.getMessage());
-                event.setStatus("FAILED");
+                event.setStatus(OutboxStatus.FAILED);
             }
         }
     }

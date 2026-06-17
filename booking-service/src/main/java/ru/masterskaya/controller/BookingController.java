@@ -1,5 +1,6 @@
 package ru.masterskaya.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +20,7 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<Void> createBooking(
-            @RequestBody BookingRequest bookingRequest) {
-
-        if (bookingRequest.isPeriodInvalid()) {
-            throw new IllegalArgumentException("Ошибка валидации: время окончания должно быть строго позже времени начала");
-        }
+            @Valid @RequestBody BookingRequest bookingRequest) {
 
         bookingService.createBooking(bookingRequest);
 
