@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -46,6 +47,8 @@ class AuthControllerTest {
 
     @MockitoBean
     private RedissonClient redissonClient;
+    @MockitoBean
+    private KafkaTemplate<String, String> kafkaTemplate;
 
     RegisterRequest registerRequest;
     AuthRequest authRequest;
@@ -109,7 +112,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("Email уже существует"));
+                .andExpect(jsonPath("$.message").value("Email уже существует"));
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import ru.masterskaya.dto.BookingPayLoad;
 import ru.masterskaya.dto.BookingRequest;
 import ru.masterskaya.exceptions.BookingConflictException;
 import ru.masterskaya.model.Booking;
@@ -18,7 +19,7 @@ import ru.masterskaya.repository.OutboxEventRepository;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.time.ZoneOffset;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -30,14 +31,10 @@ public class BookingService {
     private final OutboxEventRepository outboxEventRepository;
     private final RedissonClient redissonClient;
     private final TransactionTemplate transactionTemplate;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.redis.lock.wait-time-seconds}")
     private Long lockWaitTime;
-
-    @Value("${app.redis.lock.lease-time-seconds}")
-    private Long lockLeaseTime;
-
-    private final ObjectMapper objectMapper;
 
     public void createBooking(BookingRequest bookingRequest) {
 
@@ -45,22 +42,15 @@ public class BookingService {
         RLock lock = redissonClient.getLock(lockKey);
 
         try {
-            if (lock.tryLock(lockWaitTime, lockLeaseTime, TimeUnit.SECONDS)) {
-
-                Booking savedBooking;
+            if (lock.tryLock(lockWaitTime, TimeUnit.SECONDS)) {
                 try {
                     log.debug("Замок Redis успешно захвачен для комнаты {}", bookingRequest.roomId());
-                    savedBooking = transactionTemplate.execute(status -> processBookingSave(bookingRequest));
-
+                    transactionTemplate.executeWithoutResult(status -> processBookingSave(bookingRequest));
                 } finally {
                     if (lock.isHeldByCurrentThread()) {
                         lock.unlock();
                         log.debug("Замок Redis успешно освобожден для комнаты {}.", bookingRequest.roomId());
                     }
-                }
-
-                if (savedBooking != null) {
-                    createAndSaveOutboxEvent(savedBooking);
                 }
             } else {
                 throw new BookingConflictException("Комната временно заблокирована из-за высокой нагрузки. Попробуйте позже.");
@@ -71,10 +61,13 @@ public class BookingService {
         }
     }
 
-    private Booking processBookingSave(BookingRequest bookingRequest) {
-
-        LocalDateTime startTimeLocal = bookingRequest.startTime().toLocalDateTime();
-        LocalDateTime endTimeLocal = bookingRequest.endTime().toLocalDateTime();
+    private void processBookingSave(BookingRequest bookingRequest) {
+        LocalDateTime startTimeLocal = bookingRequest.startTime()
+                .withOffsetSameInstant(ZoneOffset.UTC)
+                .toLocalDateTime();
+        LocalDateTime endTimeLocal = bookingRequest.endTime()
+                .withOffsetSameInstant(ZoneOffset.UTC)
+                .toLocalDateTime();
 
         boolean hasOverlap = bookingRepository.existsOverlapping(
                 Long.valueOf(bookingRequest.roomId()), startTimeLocal, endTimeLocal);
@@ -89,32 +82,37 @@ public class BookingService {
                 endTimeLocal
         );
 
+        Booking savedBooking;
+
         try {
-            return bookingRepository.saveAndFlush(booking);
+            savedBooking = bookingRepository.saveAndFlush(booking);
         } catch (DataIntegrityViolationException exception) {
             log.warn("Сработала защита на уровне EXCLUDE индекса PostgreSQL для комнаты {}", bookingRequest.roomId());
             throw new BookingConflictException("Конфликт: выбранное время для этой комнаты уже занято.");
         }
+
+        OutboxEvent outboxEvent = createOutboxEvent(savedBooking);
+        outboxEventRepository.save(outboxEvent);
     }
 
-    private void createAndSaveOutboxEvent(Booking savedBooking) {
-        Map<String, Object> payload = Map.of(
-                "bookingId", savedBooking.getId(),
-                "userId", savedBooking.getUserId(),
-                "roomId", savedBooking.getRoomId(),
-                "startTime", savedBooking.getStartTime().toString(),
-                "endTime", savedBooking.getEndTime().toString()
-        );
-        String jsonPayload = objectMapper.writeValueAsString(payload);
+    private OutboxEvent createOutboxEvent(Booking savedBooking) {
 
-        OutboxEvent outboxEvent = new OutboxEvent(
+        BookingPayLoad bookingPayLoad = new BookingPayLoad(
+                savedBooking.getId(),
+                savedBooking.getUserId(),
+                savedBooking.getRoomId(),
+                savedBooking.getStartTime().toString(),
+                savedBooking.getEndTime().toString()
+        );
+
+        String jsonPayload = objectMapper.writeValueAsString(bookingPayLoad);
+
+        return new OutboxEvent(
                 OutboxEvent.AGGREGATE_TYPE_BOOKING,
                 savedBooking.getId().toString(),
                 OutboxEvent.EVENT_BOOKING_CREATED,
                 jsonPayload,
                 OutboxStatus.NEW
         );
-        outboxEventRepository.save(outboxEvent);
     }
 }
-
