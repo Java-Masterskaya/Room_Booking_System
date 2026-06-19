@@ -9,15 +9,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.masterskaya.dto.PageResponse;
 import ru.masterskaya.dto.RoomFilteringRequest;
-import ru.masterskaya.model.Equipment;
-import ru.masterskaya.model.Room;
+import ru.masterskaya.dto.RoomResponse;
 import ru.masterskaya.security.JwtAuthenticationFilter;
 import ru.masterskaya.security.JwtService;
 import ru.masterskaya.service.RoomService;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,13 +41,16 @@ class RoomControllerTest {
     @Test
     void shouldReturnPage() throws Exception {
 
-        Room room = new Room();
-        room.setId(1L);
-        room.setName("Room A");
+        RoomResponse room = RoomResponse.builder()
+                .id(1L)
+                .name("Room A")
+                .capacity(10)
+                .equipment(List.of())
+                .build();
 
         RoomFilteringRequest request = new RoomFilteringRequest(null, null);
 
-        PageResponse<Room> page = PageResponse.<Room>builder()
+        PageResponse<RoomResponse> page = PageResponse.<RoomResponse>builder()
                 .page(0)
                 .totalPages(10)
                 .size(10)
@@ -72,14 +72,15 @@ class RoomControllerTest {
     @Test
     void shouldFilterByEquipment() throws Exception {
 
-        Equipment projector = new Equipment(null, "projector", null);
-        Room room = new Room();
-        room.setId(1L);
-        room.setName("Room A");
-        room.setEquipment(new HashSet<>(Set.of(projector)));
+        RoomResponse room = RoomResponse.builder()
+                .id(1L)
+                .name("Room A")
+                .capacity(10)
+                .equipment(List.of("projector"))
+                .build();
 
         RoomFilteringRequest request = new RoomFilteringRequest(null, List.of("projector"));
-        PageResponse<Room> page = new PageResponse<>(List.of(room), 0, 10, 1, 1);
+        PageResponse<RoomResponse> page = new PageResponse<>(List.of(room), 0, 10, 1, 1);
 
         when(roomService.getRooms(request, PageRequest.of(0, 10)))
                 .thenReturn(page);
@@ -96,9 +97,12 @@ class RoomControllerTest {
     @Test
     void shouldReturnRoom() throws Exception {
 
-        Room room = new Room();
-        room.setId(1L);
-        room.setName("Conference");
+        RoomResponse room = RoomResponse.builder()
+                .id(1L)
+                .name("Conference")
+                .capacity(10)
+                .equipment(List.of())
+                .build();
 
         when(roomService.getRoomById(1L)).thenReturn(room);
 

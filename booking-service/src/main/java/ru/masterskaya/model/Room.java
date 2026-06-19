@@ -1,7 +1,6 @@
 package ru.masterskaya.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -38,12 +36,4 @@ public class Room {
             inverseJoinColumns = @JoinColumn(name = "equipment_id")
     )
     private Set<Equipment> equipment = new HashSet<>();
-
-    @JsonProperty("equipment")
-    public List<String> getEquipmentNames() {
-        return equipment.stream()
-                .map(Equipment::getName)
-                .sorted()
-                .toList();
-    }
 }

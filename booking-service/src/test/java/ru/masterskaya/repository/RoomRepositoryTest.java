@@ -12,6 +12,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.masterskaya.model.Equipment;
 import ru.masterskaya.model.Room;
 
+import jakarta.persistence.EntityManager;
+
 import java.util.List;
 import java.util.Set;
 
@@ -41,11 +43,14 @@ class RoomRepositoryTest {
     @Autowired
     private RoomRepository roomRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @Test
     void shouldFindRoomBySingleEquipment() {
 
-        Equipment projector = new Equipment(null, "projector", null);
-        Equipment board = new Equipment(null, "board", null);
+        Equipment projector = new Equipment(null, "projector");
+        Equipment board = new Equipment(null, "board");
 
         Room room = new Room(null, "Conference", 10, Set.of(projector, board));
 
@@ -61,14 +66,15 @@ class RoomRepositoryTest {
         assertEquals(1, result.getTotalElements());
         assertEquals("Conference",
                 result.getContent().get(0).getName());
-        assertTrue(result.getContent().get(0).getEquipmentNames().contains("projector"));
+        assertTrue(result.getContent().get(0).getEquipment().stream()
+                .anyMatch(e -> "projector".equals(e.getName())));
     }
 
     @Test
     void shouldFindRoomWhenAllEquipmentPresent() {
 
-        Equipment projector = new Equipment(null, "projector", null);
-        Equipment board = new Equipment(null, "board", null);
+        Equipment projector = new Equipment(null, "projector");
+        Equipment board = new Equipment(null, "board");
 
         Room room = new Room(null, "Conference", 10, Set.of(projector, board));
         roomRepository.save(room);
@@ -87,7 +93,7 @@ class RoomRepositoryTest {
     @Test
     void shouldNotFindRoomWhenEquipmentMissing() {
 
-        Equipment projector = new Equipment(null, "projector", null);
+        Equipment projector = new Equipment(null, "projector");
 
         Room room = new Room(null, "Small", 5, Set.of(projector));
         roomRepository.save(room);
@@ -105,9 +111,9 @@ class RoomRepositoryTest {
     @Test
     void shouldFindRoomWhenExtraEquipmentPresent() {
 
-        Equipment projector = new Equipment(null, "projector", null);
-        Equipment board = new Equipment(null, "board", null);
-        Equipment tv = new Equipment(null, "tv", null);
+        Equipment projector = new Equipment(null, "projector");
+        Equipment board = new Equipment(null, "board");
+        Equipment tv = new Equipment(null, "tv");
 
         Room room = new Room(null, "Large", 20, Set.of(projector, board, tv));
         roomRepository.save(room);
@@ -126,7 +132,7 @@ class RoomRepositoryTest {
     @Test
     void shouldFindRoomCaseInsensitive() {
 
-        Equipment projector = new Equipment(null, "Projector", null);
+        Equipment projector = new Equipment(null, "Projector");
 
         Room room = new Room(null, "Alpha", 8, Set.of(projector));
         roomRepository.save(room);
@@ -140,5 +146,56 @@ class RoomRepositoryTest {
 
         assertEquals(1, result.getTotalElements());
         assertEquals("Alpha", result.getContent().get(0).getName());
+    }
+
+    @Test
+    void shouldFindAllRoomsWhenNoEquipmentFilter() {
+
+        Equipment projector = new Equipment(null, "projector");
+
+        Room withEquipment = new Room(null, "Conference", 10, Set.of(projector));
+        Room withoutEquipment = new Room(null, "Empty", 5, Set.of());
+        roomRepository.save(withEquipment);
+        roomRepository.save(withoutEquipment);
+
+        var result = roomRepository.searchWithoutEquipment(
+                null,
+                PageRequest.of(0, 10)
+        );
+
+        assertEquals(2, result.getTotalElements());
+    }
+
+    @Test
+    void shouldFilterByCapacityWithoutEquipment() {
+
+        Equipment projector = new Equipment(null, "projector");
+
+        Room small = new Room(null, "Small", 5, Set.of(projector));
+        Room large = new Room(null, "Large", 20, Set.of(projector));
+        roomRepository.save(small);
+        roomRepository.save(large);
+
+        var result = roomRepository.searchWithoutEquipment(
+                10,
+                PageRequest.of(0, 10)
+        );
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals("Large", result.getContent().get(0).getName());
+    }
+
+    @Test
+    void shouldRejectEquipmentDuplicatesCaseInsensitive() {
+
+        Equipment first = new Equipment(null, "projector");
+        entityManager.persist(first);
+        entityManager.flush();
+
+        Equipment duplicate = new Equipment(null, "Projector");
+        assertThrows(org.hibernate.exception.ConstraintViolationException.class, () -> {
+            entityManager.persist(duplicate);
+            entityManager.flush();
+        });
     }
 }

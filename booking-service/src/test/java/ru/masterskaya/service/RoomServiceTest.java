@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import ru.masterskaya.dto.PageResponse;
 import ru.masterskaya.dto.RoomFilteringRequest;
+import ru.masterskaya.dto.RoomResponse;
 import ru.masterskaya.exceptions.RoomNotFoundException;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.repository.RoomRepository;
@@ -42,13 +43,13 @@ class RoomServiceTest {
         when(roomRepository.search(10, List.of("projector"), 1, pageable))
                 .thenReturn(page);
 
-        PageResponse<Room> result = roomService.getRooms(
+        PageResponse<RoomResponse> result = roomService.getRooms(
                 new RoomFilteringRequest(10, List.of("projector")),
                 PageRequest.of(0, 10));
 
         assertNotNull(result);
         assertEquals(1, result.totalElements());
-        assertEquals("Meeting Room", result.content().getFirst().getName());
+        assertEquals("Meeting Room", result.content().getFirst().name());
 
         verify(roomRepository, times(1))
                 .search(10, List.of("projector"), 1, pageable);
@@ -59,15 +60,15 @@ class RoomServiceTest {
         Pageable pageable = PageRequest.of(1, 5);
         Page<Room> emptyPage = new PageImpl<>(List.of(), pageable, 0);
 
-        when(roomRepository.search(null, List.of(""), 0, pageable))
+        when(roomRepository.searchWithoutEquipment(null, pageable))
                 .thenReturn(emptyPage);
 
-        PageResponse<Room> result = roomService.getRooms(
+        PageResponse<RoomResponse> result = roomService.getRooms(
                 new RoomFilteringRequest(null, null),
                 PageRequest.of(1, 5));
 
         assertTrue(result.isEmpty());
-        verify(roomRepository).search(null, List.of(""), 0, pageable);
+        verify(roomRepository).searchWithoutEquipment(null, pageable);
     }
 
     @Test
@@ -79,11 +80,11 @@ class RoomServiceTest {
         when(roomRepository.findByIdWithEquipment(1L))
                 .thenReturn(Optional.of(room));
 
-        Room result = roomService.getRoomById(1L);
+        RoomResponse result = roomService.getRoomById(1L);
 
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("Conference", result.getName());
+        assertEquals(1L, result.id());
+        assertEquals("Conference", result.name());
 
         verify(roomRepository).findByIdWithEquipment(1L);
     }

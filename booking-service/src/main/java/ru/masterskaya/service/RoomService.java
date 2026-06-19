@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.masterskaya.dto.PageResponse;
 import ru.masterskaya.dto.RoomFilteringRequest;
+import ru.masterskaya.dto.RoomResponse;
 import ru.masterskaya.exceptions.RoomNotFoundException;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.repository.RoomRepository;
@@ -22,11 +23,9 @@ public class RoomService {
     private final RoomRepository roomRepository;
 
     @Cacheable(value = "rooms")
-    public PageResponse<Room> getRooms(RoomFilteringRequest filteringRequest, Pageable pageable) {
+    public PageResponse<RoomResponse> getRooms(RoomFilteringRequest filteringRequest, Pageable pageable) {
 
         List<String> normalizedEquipment = normalizeEquipment(filteringRequest.equipment());
-        int equipmentSize = normalizedEquipment.size();
-        List<String> equipmentParam = equipmentSize == 0 ? List.of("") : normalizedEquipment;
 
         log.info(
                 "Выбор комнат с фильтрами: minCapacity={}, equipment={}, page={}, size={}",
@@ -36,22 +35,24 @@ public class RoomService {
                 pageable.getPageSize()
         );
 
-        Page<Room> rooms = roomRepository.search(
-                filteringRequest.minCapacity(),
-                equipmentParam,
-                equipmentSize,
-                pageable
-        );
+        Page<Room> rooms = normalizedEquipment.isEmpty()
+                ? roomRepository.searchWithoutEquipment(filteringRequest.minCapacity(), pageable)
+                : roomRepository.search(
+                        filteringRequest.minCapacity(),
+                        normalizedEquipment,
+                        normalizedEquipment.size(),
+                        pageable
+                );
 
         log.info("Найдено {} комнат на текущей странице. Всего: {}",
                 rooms.getNumberOfElements(),
                 rooms.getTotalElements());
 
-        return PageResponse.from(rooms);
+        return PageResponse.from(rooms.map(RoomResponse::from));
     }
 
     @Cacheable(value = "rooms")
-    public Room getRoomById(Long id) {
+    public RoomResponse getRoomById(Long id) {
 
         log.info("Получение переговорной по id: {}", id);
 
@@ -63,7 +64,7 @@ public class RoomService {
 
         log.info("Переговорная найдена: {}, {}", room.getName(), room.getId());
 
-        return room;
+        return RoomResponse.from(room);
     }
 
     private List<String> normalizeEquipment(List<String> equipment) {

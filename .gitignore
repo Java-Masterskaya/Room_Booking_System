@@ -6,5 +6,4 @@ target/
 *.iml
 
 ### Игнорируем секреты ###
-.env.example
 .env

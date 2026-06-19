@@ -15,30 +15,25 @@ import java.util.Optional;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
+    @EntityGraph(attributePaths = "equipment")
     @Query(value = """
         SELECT r FROM Room r
         WHERE (:capacity IS NULL OR r.capacity >= :capacity)
           AND (
-            :equipmentSize = 0
-            OR (
-                SELECT COUNT(DISTINCT LOWER(e.name))
-                FROM r.equipment e
-                WHERE LOWER(e.name) IN :equipment
-            ) = :equipmentSize
-          )
+            SELECT COUNT(DISTINCT LOWER(e.name))
+            FROM r.equipment e
+            WHERE LOWER(e.name) IN :equipment
+          ) = :equipmentSize
         ORDER BY r.id
         """,
             countQuery = """
         SELECT COUNT(r) FROM Room r
         WHERE (:capacity IS NULL OR r.capacity >= :capacity)
           AND (
-            :equipmentSize = 0
-            OR (
-                SELECT COUNT(DISTINCT LOWER(e.name))
-                FROM r.equipment e
-                WHERE LOWER(e.name) IN :equipment
-            ) = :equipmentSize
-          )
+            SELECT COUNT(DISTINCT LOWER(e.name))
+            FROM r.equipment e
+            WHERE LOWER(e.name) IN :equipment
+          ) = :equipmentSize
         """)
     Page<Room> search(
             @Param("capacity") Integer capacity,
@@ -46,6 +41,18 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             @Param("equipmentSize") int equipmentSize,
             Pageable pageable
     );
+
+    @EntityGraph(attributePaths = "equipment")
+    @Query(value = """
+        SELECT r FROM Room r
+        WHERE (:capacity IS NULL OR r.capacity >= :capacity)
+        ORDER BY r.id
+        """,
+            countQuery = """
+        SELECT COUNT(r) FROM Room r
+        WHERE (:capacity IS NULL OR r.capacity >= :capacity)
+        """)
+    Page<Room> searchWithoutEquipment(@Param("capacity") Integer capacity, Pageable pageable);
 
     @EntityGraph(attributePaths = "equipment")
     @Query(value = "SELECT r FROM Room r WHERE r.id = :id")
