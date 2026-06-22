@@ -124,7 +124,7 @@ services:
           memory: 64M
 
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v3.11.3
     container_name: prometheus
 
     ports:
