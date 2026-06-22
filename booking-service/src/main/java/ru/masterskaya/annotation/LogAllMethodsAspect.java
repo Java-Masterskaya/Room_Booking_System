@@ -7,6 +7,8 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+
 /**
  * Аспект для логирования выполнения всех методов классов, помеченных аннотацией {@link LogAllMethods}.
  * <p>
@@ -70,9 +72,9 @@ public class LogAllMethodsAspect {
      * <ol>
      *   <li>Извлекает имя класса и метода</li>
      *   <li>Замеряет время начала выполнения</li>
-     *   <li>Логирует вход в метод с аргументами</li>
+     *   <li>Логирует вход в метод с типами аргументов</li>
      *   <li>Выполняет оригинальный метод</li>
-     *   <li>При успехе - логирует результат и время выполнения</li>
+     *   <li>При успехе - логирует тип результата и время выполнения</li>
      *   <li>При исключении - логирует ошибку и время до сбоя</li>
      * </ol>
      *
@@ -91,7 +93,12 @@ public class LogAllMethodsAspect {
         Object[] args = joinPoint.getArgs();
 
         log.info("[{}] Starting execution", fullMethodName);
-        log.info("Arguments: {}", args);
+        log.info(
+                "Arguments types: {}",
+                Arrays.stream(args)
+                        .map(arg -> arg == null ? "null" : arg.getClass().getSimpleName())
+                        .toList()
+        );
 
         try {
             Object result = joinPoint.proceed();
@@ -99,7 +106,13 @@ public class LogAllMethodsAspect {
             long endTime = System.currentTimeMillis();
             long executionTime = endTime - startTime;
 
-            log.info("Exiting method [{}] with result {}", fullMethodName, result);
+            log.info(
+                    "Exiting method [{}] with result type {}",
+                    fullMethodName,
+                    result == null
+                            ? "null"
+                            : result.getClass().getSimpleName()
+            );
             log.info("Execution time: {} ms", executionTime);
 
             return result;
