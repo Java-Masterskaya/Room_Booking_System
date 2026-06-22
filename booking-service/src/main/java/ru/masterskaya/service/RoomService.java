@@ -2,10 +2,13 @@ package ru.masterskaya.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.masterskaya.dto.PageResponse;
 import ru.masterskaya.dto.RoomFilteringRequest;
 import ru.masterskaya.exceptions.RoomNotFoundException;
@@ -44,21 +47,60 @@ public class RoomService {
         return PageResponse.from(rooms);
     }
 
-    @Cacheable(value = "rooms")
+    @Cacheable(value = "room", key = "#id")
     public Room getRoomById(Long id) {
-
         log.info("Получение переговорной по id: {}", id);
+        return findRoomById(id);
+    }
 
-        Room room = roomRepository.findById(id)
+    // Временный метод заглушка, нужно будет дописывать логику
+    @Caching(evict = {
+            @CacheEvict(value = "rooms", allEntries = true), // Список всегда очищаем
+            @CacheEvict(value = "room", key = "#id")    // Удаляем только эту комнату
+    })
+    public void deleteRoomById(Long id) {
+        roomRepository.deleteById(id);
+    }
+
+    // Временный метод заглушка, нужно будет дописывать логику
+    @CacheEvict(value = "rooms", allEntries = true) // Список всегда очищаем
+    public Room createRoom(Room room) {
+        return roomRepository.save(room);
+    }
+
+    // Временный метод заглушка, нужно будет дописывать логику
+    @Caching(evict = {
+            @CacheEvict(value = "rooms", allEntries = true), // Список всегда очищаем
+            @CacheEvict(value = "room", key = "#room.id")    // Удаляем только эту комнату
+    })
+    @Transactional
+    public Room updateRoom(Room room) {
+        Room updatedRoom = findRoomById(room.getId());
+        updateRoomFields(updatedRoom, room);
+        return updatedRoom;
+    }
+
+    private Room findRoomById(Long id) {
+        return roomRepository.findById(id)
                 .orElseThrow(() -> {
-
                     log.error("Переговорная с id {} не найдена", id);
-
                     return new RoomNotFoundException("Переговорная с id: " + id + " не найдена");
                 });
+    }
 
-        log.info("Переговорная найдена: {}, {}", room.getName(), room.getId());
-
-        return room;
+    // Временный метод заглушка, нужно будет дописывать логику особенно когда будут изменены на DTO
+    private void updateRoomFields(Room existingRoom, Room newRoom) {
+        if (!newRoom.getName().isEmpty() &&
+            !newRoom.getName().isBlank() &&
+            !newRoom.getName().equals(existingRoom.getName())) {
+            existingRoom.setName(newRoom.getName());
+        }
+        if (newRoom.getCapacity() != existingRoom.getCapacity()) {
+            existingRoom.setCapacity(newRoom.getCapacity());
+        }
+        if (newRoom.getEquipment() != null &&
+            !newRoom.getEquipment().isEmpty()) {
+            existingRoom.setEquipment(newRoom.getEquipment());
+        }
     }
 }
