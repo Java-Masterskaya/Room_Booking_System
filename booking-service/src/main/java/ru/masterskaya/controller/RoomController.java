@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
-import ru.masterskaya.annotation.LogAllMethods;
+import ru.masterskaya.annotation.logging.LogAllMethods;
 import ru.masterskaya.dto.PageResponse;
 import ru.masterskaya.dto.RoomFilteringRequest;
 import ru.masterskaya.model.Room;

@@ -1,4 +1,4 @@
-package ru.masterskaya.annotation;
+package ru.masterskaya.annotation.logging;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

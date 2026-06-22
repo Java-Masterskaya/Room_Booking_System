@@ -48,6 +48,22 @@ logging:
     com:
       atlassian:
         oai: DEBUG
+  masking:
+    enabled: true
+    sensitive-fields:
+      - password
+      - pass
+      - pwd
+      - secret
+      - token
+      - jwt
+      - accessToken
+      - refreshToken
+      - apiKey
+      - authorization
+    patterns:
+      jwt: "^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$"
+      email: "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$"
 
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970

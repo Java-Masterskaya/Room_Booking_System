@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.masterskaya.annotation.LogAllMethods;
+import ru.masterskaya.annotation.logging.LogAllMethods;
 import ru.masterskaya.dto.auth.AuthRequest;
 import ru.masterskaya.dto.auth.AuthResponse;
 import ru.masterskaya.dto.auth.RegisterRequest;
