@@ -12,18 +12,18 @@ import ru.masterskaya.model.Room;
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
     @Query(value = """
-        SELECT *
-        FROM rooms
-        WHERE (:capacity IS NULL OR capacity >= :capacity)
-        AND (:equipment IS NULL OR :equipment = ANY(equipment))
-        ORDER BY id
-        """,
+            SELECT *
+            FROM rooms
+            WHERE (:capacity IS NULL OR capacity >= :capacity)
+            AND (:equipment IS NULL OR :equipment = ANY(equipment))
+            ORDER BY id
+            """,
             countQuery = """
-        SELECT count(*)
-        FROM rooms
-        WHERE (:capacity IS NULL OR capacity >= :capacity)
-        AND (:equipment IS NULL OR :equipment = ANY(equipment))
-        """,
+                    SELECT count(*)
+                    FROM rooms
+                    WHERE (:capacity IS NULL OR capacity >= :capacity)
+                    AND (:equipment IS NULL OR :equipment = ANY(equipment))
+                    """,
             nativeQuery = true)
     Page<Room> search(
             @Param("capacity") Integer capacity,

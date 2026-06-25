@@ -22,8 +22,8 @@ class OpenApiTokenMaskingUnitTest {
         String secretKey = "999";
 
         String rawValidationMessage = "Request header 'Authorization' with 'Bearer " + secretToken + "' is invalid. " +
-                "Field 'password' with value '" + secretPassword + "' and field 'secret' with value '" + secretKey + "' " +
-                "failed validation.";
+                                      "Field 'password' with value '" + secretPassword + "' and field 'secret' with value '" + secretKey + "' " +
+                                      "failed validation.";
 
         // 2. Создаем сообщение об ошибке
         ValidationReport.Message message = ValidationReport.Message.create(
