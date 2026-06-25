@@ -1,7 +1,8 @@
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS users
+(
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL
+    name  VARCHAR(255) NOT NULL
 );
 
 -- Индексы для поиска по email и имени пользователя

@@ -104,7 +104,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("Email уже существует"));
+                .andExpect(jsonPath("$.message").value("Email уже существует"));
     }
 
     @Test
