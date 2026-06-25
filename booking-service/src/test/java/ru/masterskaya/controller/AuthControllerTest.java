@@ -5,12 +5,15 @@ import lombok.experimental.FieldDefaults;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.masterskaya.dto.auth.AuthRequest;
 import ru.masterskaya.dto.auth.AuthResponse;
@@ -41,6 +44,11 @@ class AuthControllerTest {
 
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private RedissonClient redissonClient;
+    @MockitoBean
+    private KafkaTemplate<String, String> kafkaTemplate;
 
     RegisterRequest registerRequest;
     AuthRequest authRequest;
@@ -104,7 +112,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("Email уже существует"));
+                .andExpect(jsonPath("$.message").value("Email уже существует"));
     }
 
     @Test
