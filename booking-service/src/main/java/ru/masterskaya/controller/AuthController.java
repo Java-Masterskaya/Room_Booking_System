@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.masterskaya.annotation.logging.LogAllMethods;
 import ru.masterskaya.dto.auth.AuthRequest;
 import ru.masterskaya.dto.auth.AuthResponse;
 import ru.masterskaya.dto.auth.RegisterRequest;
@@ -15,6 +16,7 @@ import ru.masterskaya.service.AuthService;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@LogAllMethods
 public class AuthController {
     final AuthService authService;
 
