@@ -1,14 +1,17 @@
 package ru.masterskaya.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.*;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import ru.masterskaya.dto.PageResponse;
+import ru.masterskaya.dto.RoomFilteringRequest;
+import ru.masterskaya.dto.RoomResponse;
 import ru.masterskaya.exceptions.RoomNotFoundException;
 import ru.masterskaya.model.Room;
 import ru.masterskaya.repository.RoomRepository;
@@ -16,6 +19,7 @@ import ru.masterskaya.repository.RoomRepository;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,17 +40,19 @@ class RoomServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Room> page = new PageImpl<>(List.of(room), pageable, 1);
 
-        when(roomRepository.search(10, "projector", pageable))
+        when(roomRepository.search(10, List.of("projector"), 1, pageable))
                 .thenReturn(page);
 
-        Page<Room> result = roomService.getRooms(10, "projector", 0, 10);
+        PageResponse<RoomResponse> result = roomService.getRooms(
+                new RoomFilteringRequest(10, List.of("projector")),
+                PageRequest.of(0, 10));
 
         assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
-        assertEquals("Meeting Room", result.getContent().get(0).getName());
+        assertEquals(1, result.totalElements());
+        assertEquals("Meeting Room", result.content().getFirst().name());
 
         verify(roomRepository, times(1))
-                .search(10, "projector", pageable);
+                .search(10, List.of("projector"), 1, pageable);
     }
 
     @Test
@@ -54,13 +60,15 @@ class RoomServiceTest {
         Pageable pageable = PageRequest.of(1, 5);
         Page<Room> emptyPage = new PageImpl<>(List.of(), pageable, 0);
 
-        when(roomRepository.search(null, null, pageable))
+        when(roomRepository.searchWithoutEquipment(null, pageable))
                 .thenReturn(emptyPage);
 
-        Page<Room> result = roomService.getRooms(null, null, 1, 5);
+        PageResponse<RoomResponse> result = roomService.getRooms(
+                new RoomFilteringRequest(null, null),
+                PageRequest.of(1, 5));
 
         assertTrue(result.isEmpty());
-        verify(roomRepository).search(null, null, pageable);
+        verify(roomRepository).searchWithoutEquipment(null, pageable);
     }
 
     @Test
@@ -69,21 +77,21 @@ class RoomServiceTest {
         room.setId(1L);
         room.setName("Conference");
 
-        when(roomRepository.findById(1L))
+        when(roomRepository.findByIdWithEquipment(1L))
                 .thenReturn(Optional.of(room));
 
-        Room result = roomService.getRoomById(1L);
+        RoomResponse result = roomService.getRoomById(1L);
 
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("Conference", result.getName());
+        assertEquals(1L, result.id());
+        assertEquals("Conference", result.name());
 
-        verify(roomRepository).findById(1L);
+        verify(roomRepository).findByIdWithEquipment(1L);
     }
 
     @Test
     void shouldThrowExceptionWhenNotFound() {
-        when(roomRepository.findById(99L))
+        when(roomRepository.findByIdWithEquipment(99L))
                 .thenReturn(Optional.empty());
 
         RoomNotFoundException ex = assertThrows(
@@ -93,6 +101,6 @@ class RoomServiceTest {
 
         assertTrue(ex.getMessage().contains("99"));
 
-        verify(roomRepository).findById(99L);
+        verify(roomRepository).findByIdWithEquipment(99L);
     }
 }

@@ -1,14 +1,14 @@
 package ru.masterskaya.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "rooms")
@@ -28,7 +28,12 @@ public class Room {
     @Column(name = "capacity")
     private int capacity;
 
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "equipment", columnDefinition = "TEXT[]")
-    private List<String> equipment;
+    @JsonIgnore
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "room_equipment",
+            joinColumns = @JoinColumn(name = "room_id"),
+            inverseJoinColumns = @JoinColumn(name = "equipment_id")
+    )
+    private Set<Equipment> equipment = new HashSet<>();
 }

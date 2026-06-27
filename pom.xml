@@ -50,7 +50,7 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- Чтение .env файла -->
+                <!-- Чтение .env.example файла -->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>properties-maven-plugin</artifactId>

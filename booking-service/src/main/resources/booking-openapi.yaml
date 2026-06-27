@@ -3,19 +3,19 @@ info:
   title: Room Booking API
   version: 1.0.0
   description: API для системы бронирования переговорных комнат
+
 paths:
-#  Ниже добавлены 2 эндпоинта /api/v1/roomsdemo и /api/v1/bookingsdemo исключительно для проверки валидации по OpenApi мпецификации и проверки маскирования секретных полей
+
   /api/v1/roomsdemo:
     get:
       summary: Получить список всех переговорных
       parameters:
         - name: Authorization
           in: header
-          required: true # Делаем заголовок обязательным
+          required: true
           description: "Bearer токен авторизации"
           schema:
             type: string
-            # Задаем жесткое правило: токен должен быть строго от 50 до 100 символов
             minLength: 50
             maxLength: 100
       responses:
@@ -52,22 +52,81 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '413':
           $ref: '#/components/responses/PayloadTooLargeError'
+
   /api/v1/rooms:
+
     get:
-      summary: Получить список всех переговорных
+      summary: Получить список переговорных с пагинацией и фильтрацией
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+
+        - name: minCapacity
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 5
+
+        - name: equipment
+          in: query
+          required: false
+          description: Список оборудования (можно передавать несколько значений)
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["Проектор", "Маркерная доска"]
+
       responses:
         '200':
-          description: Успешный ответ со списком комнат
+          description: Успешный ответ со страницей комнат
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Room'
+                $ref: '#/components/schemas/PageResponse'
         '400':
           $ref: '#/components/responses/BadRequestError'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/rooms/{id}:
+    get:
+      summary: Получить переговорную по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Успешный ответ с комнатой
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '404':
+          description: Комната не найдена
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/v1/rooms/{roomId}/availability:
     get:
       summary: Получить расписание занятости комнаты на дату
@@ -155,12 +214,15 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
 components:
+
   schemas:
+
     Room:
       type: object
       properties:
         id:
           type: integer
+          format: int64
           example: 1
         name:
           type: string
@@ -170,9 +232,10 @@ components:
           example: 10
         equipment:
           type: array
+          description: Список названий оборудования (из Equipment.name)
           items:
             type: string
-          example: [ "Проектор", "Маркерная доска" ]
+          example: ["Проектор", "Маркерная доска"]
 
     TimeSlot:
       type: object
@@ -209,6 +272,33 @@ components:
           format: date-time
           example: "2026-04-12T11:00:00Z"
 
+    PageResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Room'
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          example: 100
+        totalPages:
+          type: integer
+          example: 10
+
     ApiErrorResponse:
       type: object
       required:
@@ -234,21 +324,24 @@ components:
           type: array
           items:
             type: string
-          example: [ "Field 'capacity' must be an integer" ]
+          example: ["Field 'capacity' must be an integer"]
 
   responses:
+
     BadRequestError:
       description: Ошибка валидации запроса
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
+
     InternalServerError:
       description: Нарушение контракта ответа бэкенда
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
+
     PayloadTooLargeError:
       description: Размер тела запроса превышает допустимый лимит
       content:
